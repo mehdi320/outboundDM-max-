@@ -4,10 +4,16 @@ import type {
   UpdateProduct,
   Script,
   NewScript,
-  Entry,
-  NewEntry,
-  UpdateEntry,
+  UpdateScript,
+  Prospect,
+  NewProspect,
+  UpdateProspect,
+  Log,
+  NewLog,
+  UpdateLog,
   Platform,
+  Statut,
+  ContactResult,
   BackupPayload,
 } from "@shared/types";
 
@@ -35,32 +41,57 @@ export const api = {
   },
   scripts: {
     list: (produitId?: number) =>
-      request<Script[]>(
-        `/api/scripts${produitId ? `?produit_id=${produitId}` : ""}`
-      ),
+      request<Script[]>(`/api/scripts${produitId ? `?produit_id=${produitId}` : ""}`),
     create: (data: NewScript) =>
       request<Script>("/api/scripts", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: UpdateScript) =>
+      request<Script>(`/api/scripts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     remove: (id: number) => request<void>(`/api/scripts/${id}`, { method: "DELETE" }),
   },
-  entries: {
-    list: (filters?: { produitId?: number; plateforme?: Platform }) => {
+  prospects: {
+    list: (filters?: { produitId?: number; plateforme?: Platform; statut?: Statut }) => {
       const params = new URLSearchParams();
       if (filters?.produitId) params.set("produit_id", String(filters.produitId));
       if (filters?.plateforme) params.set("plateforme", filters.plateforme);
+      if (filters?.statut) params.set("statut", filters.statut);
       const qs = params.toString();
-      return request<Entry[]>(`/api/entries${qs ? `?${qs}` : ""}`);
+      return request<Prospect[]>(`/api/prospects${qs ? `?${qs}` : ""}`);
     },
-    create: (data: NewEntry) =>
-      request<Entry>("/api/entries", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: number, data: UpdateEntry) =>
-      request<Entry>(`/api/entries/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    remove: (id: number) => request<void>(`/api/entries/${id}`, { method: "DELETE" }),
+    create: (data: NewProspect) =>
+      request<Prospect>("/api/prospects", { method: "POST", body: JSON.stringify(data) }),
+    bulkCreate: (produitId: number, prospects: NewProspect[]) =>
+      request<{ inserted: number; ignored: number }>("/api/prospects/bulk", {
+        method: "POST",
+        body: JSON.stringify({ produit_id: produitId, prospects }),
+      }),
+    update: (id: number, data: UpdateProspect) =>
+      request<Prospect>(`/api/prospects/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    contact: (id: number, scriptId: number, date?: string) =>
+      request<ContactResult>(`/api/prospects/${id}/contact`, {
+        method: "POST",
+        body: JSON.stringify({ script_id: scriptId, date }),
+      }),
+    remove: (id: number) => request<void>(`/api/prospects/${id}`, { method: "DELETE" }),
+  },
+  logs: {
+    list: (filters?: { produitId?: number; plateforme?: Platform; prospectId?: number }) => {
+      const params = new URLSearchParams();
+      if (filters?.produitId) params.set("produit_id", String(filters.produitId));
+      if (filters?.plateforme) params.set("plateforme", filters.plateforme);
+      if (filters?.prospectId) params.set("prospect_id", String(filters.prospectId));
+      const qs = params.toString();
+      return request<Log[]>(`/api/logs${qs ? `?${qs}` : ""}`);
+    },
+    create: (data: NewLog) => request<Log>("/api/logs", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: UpdateLog) =>
+      request<Log>(`/api/logs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    remove: (id: number) => request<void>(`/api/logs/${id}`, { method: "DELETE" }),
   },
   exportCsvUrl: () => "/api/export/csv",
   backup: {
     exportJsonUrl: () => "/api/backup/json",
     importJson: (payload: BackupPayload) =>
-      request<{ ok: true; products: number; scripts: number; entries: number }>(
+      request<{ ok: true; products: number; scripts: number; prospects: number; logs: number }>(
         "/api/backup/json",
         { method: "POST", body: JSON.stringify(payload) }
       ),

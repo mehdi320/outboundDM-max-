@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { Entry, Product } from "@shared/types";
+import type { Log, Product } from "@shared/types";
 
 interface Props {
   product: Product;
-  entries: Entry[];
+  logs: Log[];
   onSetGoal: (objectif: number | null) => Promise<unknown>;
 }
 
@@ -11,13 +11,11 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function DailyGoal({ product, entries, onSetGoal }: Props) {
+export function DailyGoal({ product, logs, onSetGoal }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(product.objectif_dm_jour ?? ""));
 
-  const envoyesAujourdhui = entries
-    .filter((e) => e.date === today())
-    .reduce((acc, e) => acc + e.nb_dm_envoyes, 0);
+  const envoyesAujourdhui = logs.filter((l) => l.date === today() && l.envoye).length;
 
   const objectif = product.objectif_dm_jour;
   const pct = objectif ? Math.min(100, (envoyesAujourdhui / objectif) * 100) : 0;

@@ -4,14 +4,14 @@ import { db } from "../db.js";
 export const exportRouter = Router();
 
 interface ExportRow {
-  entry_id: number;
   date: string;
   produit: string;
   script: string;
+  prospect: string | null;
   plateforme: string;
-  nb_dm_envoyes: number;
-  nb_reponses: number;
-  nb_deals_closes: number;
+  envoye: number;
+  reponse: number;
+  close: number;
   note: string | null;
 }
 
@@ -28,57 +28,43 @@ exportRouter.get("/csv", (_req, res) => {
   const rows = db
     .prepare(
       `SELECT
-        e.id as entry_id,
-        e.date as date,
+        l.date as date,
         p.nom as produit,
         s.label as script,
-        e.plateforme as plateforme,
-        e.nb_dm_envoyes as nb_dm_envoyes,
-        e.nb_reponses as nb_reponses,
-        e.nb_deals_closes as nb_deals_closes,
-        e.note as note
-       FROM entries e
-       JOIN products p ON p.id = e.produit_id
-       JOIN scripts s ON s.id = e.script_id
-       ORDER BY e.date DESC, e.id DESC`
+        pr.pseudo as prospect,
+        l.plateforme as plateforme,
+        l.envoye as envoye,
+        l.reponse as reponse,
+        l.close as close,
+        l.note as note
+       FROM logs l
+       JOIN products p ON p.id = l.produit_id
+       JOIN scripts s ON s.id = l.script_id
+       LEFT JOIN prospects pr ON pr.id = l.prospect_id
+       ORDER BY l.date DESC, l.id DESC`
     )
     .all() as ExportRow[];
 
-  const header = [
-    "date",
-    "produit",
-    "script",
-    "plateforme",
-    "nb_dm_envoyes",
-    "nb_reponses",
-    "nb_deals_closes",
-    "taux_reponse_%",
-    "taux_close_global_%",
-    "note",
-  ];
+  const header = ["date", "produit", "script", "prospect", "plateforme", "envoye", "reponse", "close", "note"];
 
-  const lines = rows.map((r) => {
-    const tauxReponse = r.nb_dm_envoyes > 0 ? (r.nb_reponses / r.nb_dm_envoyes) * 100 : 0;
-    const tauxCloseGlobal =
-      r.nb_dm_envoyes > 0 ? (r.nb_deals_closes / r.nb_dm_envoyes) * 100 : 0;
-    return [
+  const lines = rows.map((r) =>
+    [
       r.date,
       r.produit,
       r.script,
+      r.prospect ?? "",
       r.plateforme,
-      r.nb_dm_envoyes,
-      r.nb_reponses,
-      r.nb_deals_closes,
-      tauxReponse.toFixed(2),
-      tauxCloseGlobal.toFixed(2),
+      r.envoye ? 1 : 0,
+      r.reponse ? 1 : 0,
+      r.close ? 1 : 0,
       r.note ?? "",
     ]
       .map(csvEscape)
-      .join(",");
-  });
+      .join(",")
+  );
 
   const csv = [header.join(","), ...lines].join("\n");
-  const filename = `dm-tracker-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  const filename = `dm-prospection-export-${new Date().toISOString().slice(0, 10)}.csv`;
 
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);

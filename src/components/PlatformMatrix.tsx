@@ -1,10 +1,10 @@
-import type { Entry, Script } from "@shared/types";
+import type { Log, Script } from "@shared/types";
 import { PLATFORMS } from "@shared/types";
 import { formatPercent } from "@/utils/metrics";
 
 interface Props {
   scripts: Script[];
-  entries: Entry[];
+  logs: Log[];
 }
 
 interface Cell {
@@ -12,9 +12,9 @@ interface Cell {
   tauxReponse: number;
 }
 
-function computeCell(entries: Entry[]): Cell {
-  const envoyes = entries.reduce((acc, e) => acc + e.nb_dm_envoyes, 0);
-  const reponses = entries.reduce((acc, e) => acc + e.nb_reponses, 0);
+function computeCell(logs: Log[]): Cell {
+  const envoyes = logs.reduce((acc, l) => acc + (l.envoye ? 1 : 0), 0);
+  const reponses = logs.reduce((acc, l) => acc + (l.reponse ? 1 : 0), 0);
   return { envoyes, tauxReponse: envoyes > 0 ? (reponses / envoyes) * 100 : 0 };
 }
 
@@ -25,7 +25,7 @@ function cellColor(cell: Cell): string {
   return "text-base-300";
 }
 
-export function PlatformMatrix({ scripts, entries }: Props) {
+export function PlatformMatrix({ scripts, logs }: Props) {
   if (scripts.length === 0) return null;
 
   return (
@@ -47,12 +47,12 @@ export function PlatformMatrix({ scripts, entries }: Props) {
           </thead>
           <tbody>
             {scripts.map((script) => {
-              const scriptEntries = entries.filter((e) => e.script_id === script.id);
+              const scriptLogs = logs.filter((l) => l.script_id === script.id);
               return (
                 <tr key={script.id} className="border-b border-base-800 last:border-0">
                   <td className="px-3 py-2 text-base-100 font-medium">{script.label}</td>
                   {PLATFORMS.map((p) => {
-                    const cell = computeCell(scriptEntries.filter((e) => e.plateforme === p));
+                    const cell = computeCell(scriptLogs.filter((l) => l.plateforme === p));
                     return (
                       <td key={p} className="px-3 py-2 text-center">
                         {cell.envoyes === 0 ? (

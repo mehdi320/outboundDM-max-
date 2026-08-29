@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Script } from "@shared/types";
+import type { Script, UpdateScript } from "@shared/types";
 import { api } from "@/api/client";
 
 export function useScripts(produitId: number | null) {
@@ -32,6 +32,15 @@ export function useScripts(produitId: number | null) {
     [produitId, refresh]
   );
 
+  const updateScript = useCallback(
+    async (id: number, data: UpdateScript) => {
+      const script = await api.scripts.update(id, data);
+      await refresh();
+      return script;
+    },
+    [refresh]
+  );
+
   const removeScript = useCallback(
     async (id: number) => {
       await api.scripts.remove(id);
@@ -40,5 +49,5 @@ export function useScripts(produitId: number | null) {
     [refresh]
   );
 
-  return { scripts, loading, refresh, createScript, removeScript };
+  return { scripts, loading, refresh, createScript, updateScript, removeScript };
 }

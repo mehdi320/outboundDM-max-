@@ -1,38 +1,38 @@
 import { useMemo, useState } from "react";
-import type { Entry, NewEntry, Script, UpdateEntry } from "@shared/types";
+import type { Log, Prospect, Script } from "@shared/types";
 import { JournalRow } from "@/components/JournalRow";
+import { api } from "@/api/client";
 
 interface Props {
-  entries: Entry[];
+  logs: Log[];
   scripts: Script[];
-  onUpdate: (id: number, data: UpdateEntry) => Promise<unknown>;
+  prospects: Prospect[];
   onDelete: (id: number) => Promise<unknown>;
-  onCreate: (data: NewEntry) => Promise<unknown>;
+  onRefresh: () => Promise<unknown>;
 }
 
-type SortKey = "date" | "script" | "plateforme" | "nb_dm_envoyes" | "nb_reponses" | "nb_deals_closes";
+type SortKey = "date" | "prospect" | "script" | "plateforme";
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-export function Journal({ entries, scripts, onUpdate, onDelete, onCreate }: Props) {
+export function Journal({ logs, scripts, prospects, onDelete, onRefresh }: Props) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const scriptLabelOf = (scriptId: number) => scripts.find((s) => s.id === scriptId)?.label ?? "?";
+  const scriptLabelOf = (id: number) => scripts.find((s) => s.id === id)?.label ?? "?";
+  const prospectPseudoOf = (id: number | null) =>
+    id ? prospects.find((p) => p.id === id)?.pseudo ?? "?" : "—";
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     const result = term
-      ? entries.filter(
-          (e) =>
-            scriptLabelOf(e.script_id).toLowerCase().includes(term) ||
-            e.plateforme.toLowerCase().includes(term) ||
-            (e.note ?? "").toLowerCase().includes(term)
+      ? logs.filter(
+          (l) =>
+            scriptLabelOf(l.script_id).toLowerCase().includes(term) ||
+            prospectPseudoOf(l.prospect_id).toLowerCase().includes(term) ||
+            l.plateforme.toLowerCase().includes(term) ||
+            (l.note ?? "").toLowerCase().includes(term)
         )
-      : entries;
+      : logs;
 
     const sorted = [...result].sort((a, b) => {
       let cmp = 0;
@@ -40,20 +40,21 @@ export function Journal({ entries, scripts, onUpdate, onDelete, onCreate }: Prop
         case "date":
           cmp = a.date.localeCompare(b.date);
           break;
+        case "prospect":
+          cmp = prospectPseudoOf(a.prospect_id).localeCompare(prospectPseudoOf(b.prospect_id));
+          break;
         case "script":
           cmp = scriptLabelOf(a.script_id).localeCompare(scriptLabelOf(b.script_id));
           break;
         case "plateforme":
           cmp = a.plateforme.localeCompare(b.plateforme);
           break;
-        default:
-          cmp = a[sortKey] - b[sortKey];
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
     return sorted;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, scripts, search, sortKey, sortDir]);
+  }, [logs, scripts, prospects, search, sortKey, sortDir]);
 
   function toggleSort(key: SortKey) {
     if (key === sortKey) {
@@ -64,26 +65,16 @@ export function Journal({ entries, scripts, onUpdate, onDelete, onCreate }: Prop
     }
   }
 
-  async function handleDuplicate(entry: Entry) {
-    await onCreate({
-      produit_id: entry.produit_id,
-      script_id: entry.script_id,
-      plateforme: entry.plateforme,
-      date: today(),
-      nb_dm_envoyes: 0,
-      nb_reponses: 0,
-      nb_deals_closes: 0,
-      note: null,
-    });
+  async function handleToggle(id: number, field: "envoye" | "reponse" | "close", value: boolean) {
+    await api.logs.update(id, { [field]: value });
+    await onRefresh();
   }
 
-  function SortHeader({ label, sortKeyValue, align = "left" }: { label: string; sortKeyValue: SortKey; align?: "left" | "right" }) {
+  function SortHeader({ label, sortKeyValue }: { label: string; sortKeyValue: SortKey }) {
     const active = sortKey === sortKeyValue;
     return (
       <th
-        className={`px-3 py-2 font-medium cursor-pointer select-none hover:text-base-200 ${
-          align === "right" ? "text-right" : "text-left"
-        }`}
+        className="px-3 py-2 font-medium text-left cursor-pointer select-none hover:text-base-200"
         onClick={() => toggleSort(sortKeyValue)}
       >
         {label} {active ? (sortDir === "asc" ? "▲" : "▼") : ""}
@@ -95,11 +86,11 @@ export function Journal({ entries, scripts, onUpdate, onDelete, onCreate }: Prop
     <div className="bg-base-850 border border-base-700 rounded-lg overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-base-700">
         <h2 className="text-sm font-semibold text-base-200 uppercase tracking-wide whitespace-nowrap">
-          Journal ({filtered.length}/{entries.length})
+          Journal ({filtered.length}/{logs.length})
         </h2>
         <input
           className="bg-base-900 border border-base-600 rounded px-2 py-1 text-sm w-56 focus:outline-none focus:border-amber-500"
-          placeholder="Rechercher (script, plateforme, note)..."
+          placeholder="Rechercher (prospect, script, note)..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -109,11 +100,12 @@ export function Journal({ entries, scripts, onUpdate, onDelete, onCreate }: Prop
           <thead>
             <tr className="text-base-400 text-xs uppercase tracking-wide border-b border-base-700">
               <SortHeader label="Date" sortKeyValue="date" />
+              <SortHeader label="Prospect" sortKeyValue="prospect" />
               <SortHeader label="Script" sortKeyValue="script" />
               <SortHeader label="Plateforme" sortKeyValue="plateforme" />
-              <SortHeader label="Envoyés" sortKeyValue="nb_dm_envoyes" align="right" />
-              <SortHeader label="Réponses" sortKeyValue="nb_reponses" align="right" />
-              <SortHeader label="Closés" sortKeyValue="nb_deals_closes" align="right" />
+              <th className="px-3 py-2 font-medium text-center">Env.</th>
+              <th className="px-3 py-2 font-medium text-center">Rép.</th>
+              <th className="px-3 py-2 font-medium text-center">Close</th>
               <th className="px-3 py-2 font-medium text-left">Note</th>
               <th className="px-3 py-2"></th>
             </tr>
@@ -121,19 +113,19 @@ export function Journal({ entries, scripts, onUpdate, onDelete, onCreate }: Prop
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-base-500">
-                  {entries.length === 0 ? "Aucune entrée pour l'instant." : "Aucun résultat pour cette recherche."}
+                <td colSpan={9} className="px-3 py-6 text-center text-base-500">
+                  {logs.length === 0 ? "Aucun log pour l'instant." : "Aucun résultat pour cette recherche."}
                 </td>
               </tr>
             ) : (
-              filtered.map((entry) => (
+              filtered.map((log) => (
                 <JournalRow
-                  key={entry.id}
-                  entry={entry}
-                  scripts={scripts}
-                  onUpdate={onUpdate}
+                  key={log.id}
+                  log={log}
+                  scriptLabel={scriptLabelOf(log.script_id)}
+                  prospectPseudo={prospectPseudoOf(log.prospect_id)}
+                  onToggle={handleToggle}
                   onDelete={onDelete}
-                  onDuplicate={handleDuplicate}
                 />
               ))
             )}

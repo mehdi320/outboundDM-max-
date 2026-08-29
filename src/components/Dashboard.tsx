@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Entry, Platform, Script } from "@shared/types";
+import type { Log, Platform, Script } from "@shared/types";
 import { PlatformFilter } from "@/components/PlatformFilter";
 import { ScriptCard } from "@/components/ScriptCard";
 import { PlatformMatrix } from "@/components/PlatformMatrix";
@@ -8,21 +8,18 @@ import { computeAllScriptMetrics, findBestScript } from "@/utils/metrics";
 
 interface Props {
   scripts: Script[];
-  entries: Entry[];
+  logs: Log[];
 }
 
-export function Dashboard({ scripts, entries }: Props) {
+export function Dashboard({ scripts, logs }: Props) {
   const [platform, setPlatform] = useState<Platform | "Toutes">("Toutes");
 
-  const filteredEntries = useMemo(
-    () => (platform === "Toutes" ? entries : entries.filter((e) => e.plateforme === platform)),
-    [entries, platform]
+  const filteredLogs = useMemo(
+    () => (platform === "Toutes" ? logs : logs.filter((l) => l.plateforme === platform)),
+    [logs, platform]
   );
 
-  const metrics = useMemo(
-    () => computeAllScriptMetrics(scripts, filteredEntries),
-    [scripts, filteredEntries]
-  );
+  const metrics = useMemo(() => computeAllScriptMetrics(scripts, filteredLogs), [scripts, filteredLogs]);
 
   const best = useMemo(() => findBestScript(metrics), [metrics]);
 
@@ -43,7 +40,7 @@ export function Dashboard({ scripts, entries }: Props) {
         <PlatformFilter value={platform} onChange={setPlatform} />
       </div>
 
-      {filteredEntries.length === 0 ? (
+      {filteredLogs.length === 0 ? (
         <div className="bg-base-850 border border-base-700 rounded-lg p-6 text-center text-base-400 text-sm">
           Aucune donnée pour ce filtre.
         </div>
@@ -57,11 +54,11 @@ export function Dashboard({ scripts, entries }: Props) {
               ))}
           </div>
 
-          <TrendChart scripts={scripts} entries={filteredEntries} />
+          <TrendChart scripts={scripts} logs={filteredLogs} />
         </>
       )}
 
-      <PlatformMatrix scripts={scripts} entries={entries} />
+      <PlatformMatrix scripts={scripts} logs={logs} />
     </div>
   );
 }

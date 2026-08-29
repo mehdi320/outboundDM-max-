@@ -1,10 +1,10 @@
-import type { Entry, Script } from "@shared/types";
+import type { Log, Script } from "@shared/types";
 
 export const MIN_DM_FOR_ELIGIBILITY = 10;
 
 export interface ScriptMetrics {
   script: Script;
-  nbEntries: number;
+  nbLogs: number;
   totalEnvoyes: number;
   totalReponses: number;
   totalCloses: number;
@@ -14,15 +14,15 @@ export interface ScriptMetrics {
   eligible: boolean;
 }
 
-export function computeScriptMetrics(script: Script, entries: Entry[]): ScriptMetrics {
-  const scriptEntries = entries.filter((e) => e.script_id === script.id);
-  const totalEnvoyes = sum(scriptEntries, "nb_dm_envoyes");
-  const totalReponses = sum(scriptEntries, "nb_reponses");
-  const totalCloses = sum(scriptEntries, "nb_deals_closes");
+export function computeScriptMetrics(script: Script, logs: Log[]): ScriptMetrics {
+  const scriptLogs = logs.filter((l) => l.script_id === script.id);
+  const totalEnvoyes = countTrue(scriptLogs, "envoye");
+  const totalReponses = countTrue(scriptLogs, "reponse");
+  const totalCloses = countTrue(scriptLogs, "close");
 
   return {
     script,
-    nbEntries: scriptEntries.length,
+    nbLogs: scriptLogs.length,
     totalEnvoyes,
     totalReponses,
     totalCloses,
@@ -33,8 +33,8 @@ export function computeScriptMetrics(script: Script, entries: Entry[]): ScriptMe
   };
 }
 
-export function computeAllScriptMetrics(scripts: Script[], entries: Entry[]): ScriptMetrics[] {
-  return scripts.map((script) => computeScriptMetrics(script, entries));
+export function computeAllScriptMetrics(scripts: Script[], logs: Log[]): ScriptMetrics[] {
+  return scripts.map((script) => computeScriptMetrics(script, logs));
 }
 
 export function findBestScript(metrics: ScriptMetrics[]): ScriptMetrics | null {
@@ -45,8 +45,8 @@ export function findBestScript(metrics: ScriptMetrics[]): ScriptMetrics | null {
   );
 }
 
-function sum(entries: Entry[], key: keyof Pick<Entry, "nb_dm_envoyes" | "nb_reponses" | "nb_deals_closes">): number {
-  return entries.reduce((acc, e) => acc + (e[key] ?? 0), 0);
+function countTrue(logs: Log[], key: "envoye" | "reponse" | "close"): number {
+  return logs.reduce((acc, l) => acc + (l[key] ? 1 : 0), 0);
 }
 
 function ratio(numerator: number, denominator: number): number {

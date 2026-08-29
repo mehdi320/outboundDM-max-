@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import type { Entry, Script } from "@shared/types";
+import type { Log, Script } from "@shared/types";
 
 interface Props {
   scripts: Script[];
-  entries: Entry[];
+  logs: Log[];
 }
 
 const COLORS = ["#f59e0b", "#22d3ee", "#34d399", "#f87171", "#a78bfa", "#fb923c", "#e879f9"];
@@ -34,11 +34,11 @@ interface Series {
   points: { x: number; y: number; tauxReponse: number; envoyes: number }[];
 }
 
-export function TrendChart({ scripts, entries }: Props) {
+export function TrendChart({ scripts, logs }: Props) {
   const { weekKeys, series } = useMemo(() => {
     const weekMap = new Map<string, number>();
-    for (const e of entries) {
-      const { key, sortValue } = isoWeekKey(e.date);
+    for (const l of logs) {
+      const { key, sortValue } = isoWeekKey(l.date);
       weekMap.set(key, sortValue);
     }
     const sortedWeeks = [...weekMap.entries()]
@@ -47,11 +47,11 @@ export function TrendChart({ scripts, entries }: Props) {
 
     const series: Series[] = scripts.map((script, i) => {
       const byWeek = new Map<string, { envoyes: number; reponses: number }>();
-      for (const e of entries.filter((e) => e.script_id === script.id)) {
-        const { key } = isoWeekKey(e.date);
+      for (const l of logs.filter((l) => l.script_id === script.id)) {
+        const { key } = isoWeekKey(l.date);
         const acc = byWeek.get(key) ?? { envoyes: 0, reponses: 0 };
-        acc.envoyes += e.nb_dm_envoyes;
-        acc.reponses += e.nb_reponses;
+        acc.envoyes += l.envoye ? 1 : 0;
+        acc.reponses += l.reponse ? 1 : 0;
         byWeek.set(key, acc);
       }
       const points = sortedWeeks
@@ -70,7 +70,7 @@ export function TrendChart({ scripts, entries }: Props) {
     });
 
     return { weekKeys: sortedWeeks, series: series.filter((s) => s.points.length > 0) };
-  }, [scripts, entries]);
+  }, [scripts, logs]);
 
   if (weekKeys.length < 2 || series.length === 0) {
     return (

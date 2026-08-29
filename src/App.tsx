@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { ProductTabs } from "@/components/ProductTabs";
 import { ScriptManager } from "@/components/ScriptManager";
-import { EntryForm } from "@/components/EntryForm";
+import { ScriptGenerator } from "@/components/ScriptGenerator";
+import { ProspectList } from "@/components/ProspectList";
 import { Dashboard } from "@/components/Dashboard";
 import { Journal } from "@/components/Journal";
+import { Queue } from "@/components/Queue";
 import { ExportButton } from "@/components/ExportButton";
 import { BackupControls } from "@/components/BackupControls";
 import { DailyGoal } from "@/components/DailyGoal";
 import { useProducts } from "@/hooks/useProducts";
 import { useScripts } from "@/hooks/useScripts";
-import { useEntries } from "@/hooks/useEntries";
+import { useProspects } from "@/hooks/useProspects";
+import { useLogs } from "@/hooks/useLogs";
+
+type Section = "prospects" | "scripts" | "dashboard";
 
 export default function App() {
   const {
@@ -20,6 +25,8 @@ export default function App() {
     removeProduct,
   } = useProducts();
   const [activeProductId, setActiveProductId] = useState<number | null>(null);
+  const [view, setView] = useState<"normal" | "queue">("normal");
+  const [section, setSection] = useState<Section>("prospects");
 
   useEffect(() => {
     if (activeProductId == null && products.length > 0) {
@@ -35,15 +42,46 @@ export default function App() {
     [products, activeProductId]
   );
 
-  const { scripts, createScript, removeScript } = useScripts(activeProductId);
-  const { entries, createEntry, updateEntry, removeEntry } = useEntries(activeProductId);
+  const { scripts, createScript, updateScript, removeScript } = useScripts(activeProductId);
+  const {
+    prospects,
+    createProspect,
+    bulkCreateProspects,
+    updateProspect,
+    contactProspect,
+    removeProspect,
+  } = useProspects(activeProductId);
+  const { logs, removeLog, refresh: refreshLogs } = useLogs(activeProductId);
+
+  async function handleContact(prospectId: number, scriptId: number) {
+    await contactProspect(prospectId, scriptId);
+    await refreshLogs();
+  }
+
+  async function handleIgnore(prospectId: number) {
+    await updateProspect(prospectId, { statut: "ignore" });
+  }
+
+  if (view === "queue" && activeProduct) {
+    return (
+      <Queue
+        product={activeProduct}
+        scripts={scripts}
+        prospects={prospects}
+        logs={logs}
+        onContact={handleContact}
+        onIgnore={handleIgnore}
+        onExit={() => setView("normal")}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base-950 text-base-100 flex flex-col">
       <header className="border-b border-base-800 px-4 py-3 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-base font-bold tracking-tight">DM Tracker</h1>
-          <p className="text-xs text-base-500">Suivi de prospection — Instagram / Threads / Twitter</p>
+          <h1 className="text-base font-bold tracking-tight">DM Prospection</h1>
+          <p className="text-xs text-base-500">Threads / Instagram / Twitter — préparation, pas d'envoi automatisé</p>
         </div>
         <div className="flex items-center gap-3">
           <ExportButton />
@@ -71,26 +109,76 @@ export default function App() {
           </div>
         ) : activeProductId != null && activeProduct != null ? (
           <>
-            <DailyGoal
-              product={activeProduct}
-              entries={entries}
-              onSetGoal={(objectif) => updateProduct(activeProduct.id, { objectif_dm_jour: objectif })}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-1 bg-base-900 border border-base-700 rounded-md p-1">
+                {(["prospects", "scripts", "dashboard"] as Section[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSection(s)}
+                    className={`text-sm px-3 py-1.5 rounded font-medium capitalize transition-colors ${
+                      section === s
+                        ? "bg-amber-600 text-base-950"
+                        : "text-base-300 hover:text-base-100 hover:bg-base-800"
+                    }`}
+                  >
+                    {s === "prospects" ? "Prospects" : s === "scripts" ? "Scripts" : "Dashboard"}
+                  </button>
+                ))}
+              </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ScriptManager scripts={scripts} onCreate={createScript} onDelete={removeScript} />
-              <EntryForm produitId={activeProductId} scripts={scripts} onSubmit={createEntry} />
+              <div className="flex items-center gap-3">
+                <DailyGoal
+                  product={activeProduct}
+                  logs={logs}
+                  onSetGoal={(objectif) => updateProduct(activeProduct.id, { objectif_dm_jour: objectif })}
+                />
+                <button
+                  onClick={() => setView("queue")}
+                  className="text-sm px-4 py-2 rounded-md bg-pos-500 hover:bg-pos-400 text-base-950 font-bold"
+                >
+                  ▶ Lancer la file d'exécution
+                </button>
+              </div>
             </div>
 
-            <Dashboard scripts={scripts} entries={entries} />
+            {section === "prospects" && (
+              <ProspectList
+                produitId={activeProductId}
+                prospects={prospects}
+                onCreate={createProspect}
+                onBulkCreate={bulkCreateProspects}
+                onUpdate={updateProspect}
+                onDelete={removeProspect}
+              />
+            )}
 
-            <Journal
-              entries={entries}
-              scripts={scripts}
-              onUpdate={updateEntry}
-              onDelete={removeEntry}
-              onCreate={createEntry}
-            />
+            {section === "scripts" && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                <ScriptManager
+                  scripts={scripts}
+                  onCreate={createScript}
+                  onUpdate={updateScript}
+                  onDelete={removeScript}
+                />
+                <ScriptGenerator
+                  produitNom={activeProduct.nom}
+                  onSaveAsScript={(label, contenu) => createScript(label, contenu)}
+                />
+              </div>
+            )}
+
+            {section === "dashboard" && (
+              <>
+                <Dashboard scripts={scripts} logs={logs} />
+                <Journal
+                  logs={logs}
+                  scripts={scripts}
+                  prospects={prospects}
+                  onDelete={removeLog}
+                  onRefresh={refreshLogs}
+                />
+              </>
+            )}
           </>
         ) : null}
       </main>

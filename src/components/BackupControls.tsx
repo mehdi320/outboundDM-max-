@@ -17,13 +17,19 @@ export function BackupControls() {
       const text = await file.text();
       const payload = JSON.parse(text) as BackupPayload;
 
-      if (!Array.isArray(payload.products) || !Array.isArray(payload.scripts) || !Array.isArray(payload.entries)) {
-        throw new Error("Ce fichier ne ressemble pas à une sauvegarde DM Tracker valide.");
+      if (
+        !Array.isArray(payload.products) ||
+        !Array.isArray(payload.scripts) ||
+        !Array.isArray(payload.prospects) ||
+        !Array.isArray(payload.logs)
+      ) {
+        throw new Error("Ce fichier ne ressemble pas à une sauvegarde valide.");
       }
 
       const confirmed = confirm(
         `Restaurer cette sauvegarde va REMPLACER toutes les données actuelles par :\n` +
-          `${payload.products.length} produit(s), ${payload.scripts.length} script(s), ${payload.entries.length} entrée(s).\n\n` +
+          `${payload.products.length} produit(s), ${payload.scripts.length} script(s), ` +
+          `${payload.prospects.length} prospect(s), ${payload.logs.length} log(s).\n\n` +
           `Cette action est irréversible. Continuer ?`
       );
       if (!confirmed) return;
@@ -43,7 +49,7 @@ export function BackupControls() {
         href={api.backup.exportJsonUrl()}
         download
         className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-amber-400 hover:border-amber-500 transition-colors"
-        title="Télécharger une sauvegarde complète (produits, scripts, entrées)"
+        title="Télécharger une sauvegarde complète (produits, scripts, prospects, logs)"
       >
         ⬇ Sauvegarde JSON
       </a>

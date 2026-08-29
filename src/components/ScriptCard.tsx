@@ -35,7 +35,7 @@ export function ScriptCard({ metrics, isBest }: Props) {
         <Metric label="DM envoyés" value={String(totalEnvoyes)} />
         <Metric label="Réponses" value={String(totalReponses)} />
         <Metric label="Deals closés" value={String(totalCloses)} />
-        <Metric label="Entrées" value={String(metrics.nbEntries)} />
+        <Metric label="Logs" value={String(metrics.nbLogs)} />
       </div>
 
       <div className="border-t border-base-700 pt-3 grid grid-cols-3 gap-2">
