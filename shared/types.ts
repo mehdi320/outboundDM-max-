@@ -81,18 +81,6 @@ export interface BackupPayload {
   logs: Log[];
 }
 
-// Angles de copywriting pour le générateur de messages A/B
-export type Angle = "douleur" | "benefice" | "curiosite" | "preuve_sociale";
-
-export const ANGLES: Angle[] = ["douleur", "benefice", "curiosite", "preuve_sociale"];
-
-export const ANGLE_LABELS: Record<Angle, string> = {
-  douleur: "Douleur",
-  benefice: "Bénéfice",
-  curiosite: "Curiosité",
-  preuve_sociale: "Preuve sociale",
-};
-
 export type Longueur = "courte" | "developpee";
 export type Structure =
   | "question_ouverte"
@@ -111,7 +99,6 @@ export const STRUCTURE_LABELS: Record<Structure, string> = {
 
 export interface GeneratedVariant {
   texte: string;
-  angle: Angle;
   structure: Structure;
   longueur: Longueur;
 }

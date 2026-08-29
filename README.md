@@ -37,10 +37,13 @@ Les données sont stockées dans `data/dm-tracker.sqlite3` (créé automatiqueme
 - **Produits** : onglets en haut, créer/supprimer
 - **Scripts** : créer/éditer/supprimer, activer/désactiver pour la rotation A/B, variables
   `{prenom}` `{detail}` `{produit}`
-- **Générateur de messages A/B** : choisis un angle (douleur/bénéfice/curiosité/preuve
-  sociale), génère 5 variantes qui varient longueur et structure (question ouverte,
-  affirmation directe, référence à l'activité, ton formel/familier). Chaque variante peut
-  être sauvegardée en un clic comme nouveau script.
+- **Générateur de variantes A/B** : colle un message déjà rédigé (message de référence) — il
+  devient automatiquement **Script A**. L'app génère 5 variantes qui gardent le même fond
+  mais varient la forme : longueur (courte 1-2 phrases / développée 4-5 phrases) et structure
+  (question ouverte, affirmation directe, référence à l'activité, ton formel/familier).
+  Chaque variante se sauvegarde en un clic comme Script B, C, D... Aucun contenu n'est
+  inventé : le texte de base reste le tien, seule la forme est recomposée (l'adaptation
+  tutoiement/vouvoiement est approximative — à relire avant envoi, comme tout le reste).
 - **Prospects** : ajout manuel ou **import CSV en masse** (colonnes `pseudo`, `plateforme`,
   `detail`), filtrable par plateforme/statut, changement de statut en ligne, dédoublonnage
   automatique
@@ -87,7 +90,7 @@ data/                    # fichier SQLite local (créé au runtime, gitignored)
 ```
 
 Pour ajouter une métrique : `src/utils/metrics.ts` + `src/components/Dashboard.tsx`.
-Pour ajouter un angle ou des templates au générateur : `src/utils/generator.ts`.
+Pour ajouter une structure/combinaison au générateur de variantes : `src/utils/generator.ts`.
 Pour changer la logique de rotation A/B : `buildQueue()` dans `src/components/Queue.tsx`.
 
 ## Scripts npm

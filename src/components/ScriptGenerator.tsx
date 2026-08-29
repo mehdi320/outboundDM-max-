@@ -1,84 +1,108 @@
 import { useState } from "react";
-import type { Angle, GeneratedVariant } from "@shared/types";
-import { ANGLES, ANGLE_LABELS, STRUCTURE_LABELS } from "@shared/types";
-import { generateVariants } from "@/utils/generator";
+import type { GeneratedVariant } from "@shared/types";
+import { STRUCTURE_LABELS } from "@shared/types";
+import { generateVariantsFromReference } from "@/utils/generator";
 
 interface Props {
-  produitNom: string;
   onSaveAsScript: (label: string, contenu: string) => Promise<unknown>;
 }
 
-export function ScriptGenerator({ produitNom, onSaveAsScript }: Props) {
-  const [angle, setAngle] = useState<Angle>("douleur");
+const VARIANT_LETTERS = ["B", "C", "D", "E", "F"];
+
+export function ScriptGenerator({ onSaveAsScript }: Props) {
+  const [reference, setReference] = useState("");
   const [variants, setVariants] = useState<GeneratedVariant[]>([]);
+  const [scriptASaved, setScriptASaved] = useState(false);
+  const [savingA, setSavingA] = useState(false);
   const [savedIndexes, setSavedIndexes] = useState<Set<number>>(new Set());
 
-  function handleGenerate() {
-    setVariants(generateVariants(produitNom, angle));
+  async function handleGenerate() {
+    const clean = reference.trim();
+    if (!clean) return;
+
+    setVariants(generateVariantsFromReference(clean));
     setSavedIndexes(new Set());
+
+    if (!scriptASaved) {
+      setSavingA(true);
+      try {
+        await onSaveAsScript("Script A", clean);
+        setScriptASaved(true);
+      } finally {
+        setSavingA(false);
+      }
+    }
   }
 
-  async function handleSave(variant: GeneratedVariant, index: number) {
-    const label = `${ANGLE_LABELS[variant.angle]} · ${STRUCTURE_LABELS[variant.structure]}`;
+  async function handleSaveVariant(variant: GeneratedVariant, index: number) {
+    const letter = VARIANT_LETTERS[index] ?? String(index + 2);
+    const label = `Script ${letter} · ${STRUCTURE_LABELS[variant.structure]}`;
     await onSaveAsScript(label, variant.texte);
     setSavedIndexes((prev) => new Set(prev).add(index));
   }
 
   return (
     <div className="bg-base-850 border border-base-700 rounded-lg p-4">
-      <h2 className="text-sm font-semibold text-base-200 uppercase tracking-wide mb-3">
-        Générateur de messages A/B
+      <h2 className="text-sm font-semibold text-base-200 uppercase tracking-wide mb-1">
+        Générateur de variantes A/B
       </h2>
+      <p className="text-xs text-base-500 mb-3">
+        Colle ton message habituel : il devient <span className="text-amber-400">Script A</span>, et l'app
+        génère des variantes qui gardent le même fond mais changent la forme (longueur, structure, ton).
+      </p>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <div className="flex items-center gap-1 bg-base-900 border border-base-700 rounded-md p-1">
-          {ANGLES.map((a) => (
-            <button
-              key={a}
-              onClick={() => setAngle(a)}
-              className={`text-xs px-3 py-1.5 rounded font-medium transition-colors ${
-                angle === a
-                  ? "bg-amber-600 text-base-950"
-                  : "text-base-300 hover:text-base-100 hover:bg-base-800"
-              }`}
-            >
-              {ANGLE_LABELS[a]}
-            </button>
-          ))}
-        </div>
+      <textarea
+        className="w-full bg-base-900 border border-base-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 resize-y"
+        rows={4}
+        placeholder="Salut {prenom} ! J'ai vu {detail}, ça m'a fait penser à toi. Tu es ouvert(e) à en discuter ?"
+        value={reference}
+        onChange={(e) => setReference(e.target.value)}
+      />
+
+      <div className="flex items-center gap-3 mt-2 mb-4">
         <button
-          className="text-sm px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold"
+          className="text-sm px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold disabled:opacity-40"
+          disabled={!reference.trim() || savingA}
           onClick={handleGenerate}
         >
-          Générer 5 variantes
+          {savingA ? "..." : "Générer les variantes"}
         </button>
+        {scriptASaved && (
+          <span className="text-xs text-pos-400">✓ Message de référence sauvegardé comme Script A</span>
+        )}
       </div>
 
       {variants.length === 0 ? (
         <p className="text-base-500 text-sm">
-          Choisis un angle puis clique sur "Générer" pour obtenir des variantes de message prêtes à
-          tester en A/B.
+          Colle un message déjà rédigé ci-dessus puis clique sur "Générer" pour obtenir des variantes
+          prêtes à tester en A/B.
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {variants.map((v, i) => (
-            <div key={i} className="border border-base-700 rounded-md p-3 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-base-500">
-                <span className="px-1.5 py-0.5 rounded bg-base-800">{STRUCTURE_LABELS[v.structure]}</span>
-                <span className="px-1.5 py-0.5 rounded bg-base-800">
-                  {v.longueur === "courte" ? "Court" : "Développé"}
-                </span>
+          {variants.map((v, i) => {
+            const letter = VARIANT_LETTERS[i] ?? String(i + 2);
+            return (
+              <div key={i} className="border border-base-700 rounded-md p-3 flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-base-500">
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold">
+                    Script {letter}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-base-800">{STRUCTURE_LABELS[v.structure]}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-base-800">
+                    {v.longueur === "courte" ? "Court" : "Développé"}
+                  </span>
+                </div>
+                <p className="text-sm text-base-200 whitespace-pre-wrap flex-1">{v.texte}</p>
+                <button
+                  disabled={savedIndexes.has(i)}
+                  className="self-start text-xs px-2 py-1 rounded border border-base-600 text-base-300 hover:text-pos-cyan hover:border-pos-cyan disabled:opacity-40 disabled:hover:text-base-300 disabled:hover:border-base-600 transition-colors"
+                  onClick={() => handleSaveVariant(v, i)}
+                >
+                  {savedIndexes.has(i) ? `✓ Sauvegardé comme Script ${letter}` : `Sauvegarder comme Script ${letter}`}
+                </button>
               </div>
-              <p className="text-sm text-base-200 whitespace-pre-wrap flex-1">{v.texte}</p>
-              <button
-                disabled={savedIndexes.has(i)}
-                className="self-start text-xs px-2 py-1 rounded border border-base-600 text-base-300 hover:text-pos-cyan hover:border-pos-cyan disabled:opacity-40 disabled:hover:text-base-300 disabled:hover:border-base-600 transition-colors"
-                onClick={() => handleSave(v, i)}
-              >
-                {savedIndexes.has(i) ? "✓ Sauvegardé comme script" : "Sauvegarder comme script"}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

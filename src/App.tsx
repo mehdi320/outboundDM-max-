@@ -160,10 +160,7 @@ export default function App() {
                   onUpdate={updateScript}
                   onDelete={removeScript}
                 />
-                <ScriptGenerator
-                  produitNom={activeProduct.nom}
-                  onSaveAsScript={(label, contenu) => createScript(label, contenu)}
-                />
+                <ScriptGenerator onSaveAsScript={(label, contenu) => createScript(label, contenu)} />
               </div>
             )}
 
