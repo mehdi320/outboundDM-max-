@@ -1,13 +1,32 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { GeneratedVariant } from "@shared/types";
 import { STRUCTURE_LABELS } from "@shared/types";
 import { generateVariantsFromReference } from "@/utils/generator";
+import { lintMessage } from "@/utils/copywritingRules";
 
 interface Props {
   onSaveAsScript: (label: string, contenu: string) => Promise<unknown>;
 }
 
 const VARIANT_LETTERS = ["B", "C", "D", "E", "F"];
+
+function LintBadges({ text }: { text: string }) {
+  const issues = useMemo(() => lintMessage(text), [text]);
+  if (!text.trim()) return null;
+  if (issues.length === 0) {
+    return <p className="text-xs text-pos-400">✓ Conforme aux bonnes pratiques cold outreach</p>;
+  }
+  return (
+    <ul className="space-y-0.5">
+      {issues.map((issue, i) => (
+        <li key={`${issue.code}-${i}`} className="text-xs text-amber-400 flex items-start gap-1">
+          <span>⚠</span>
+          <span>{issue.message}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function ScriptGenerator({ onSaveAsScript }: Props) {
   const [reference, setReference] = useState("");
@@ -48,7 +67,11 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
       </h2>
       <p className="text-xs text-base-500 mb-3">
         Colle ton message habituel : il devient <span className="text-amber-400">Script A</span>, et l'app
-        génère des variantes qui gardent le même fond mais changent la forme (longueur, structure, ton).
+        génère des variantes qui gardent le même fond mais changent la forme (longueur, structure, ton). Les
+        variantes appliquent automatiquement les bonnes pratiques cold outreach (prospect avant l'outil, un
+        seul CTA à faible friction, pas de jargon ni de formules IA génériques) — relis quand même avant
+        d'envoyer, surtout pour vérifier que <code className="text-amber-400">{"{detail}"}</code> est bien
+        connecté au problème du prospect.
       </p>
 
       <textarea
@@ -58,6 +81,9 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
         value={reference}
         onChange={(e) => setReference(e.target.value)}
       />
+      <div className="mt-1.5">
+        <LintBadges text={reference} />
+      </div>
 
       <div className="flex items-center gap-3 mt-2 mb-4">
         <button
@@ -93,6 +119,7 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
                   </span>
                 </div>
                 <p className="text-sm text-base-200 whitespace-pre-wrap flex-1">{v.texte}</p>
+                <LintBadges text={v.texte} />
                 <button
                   disabled={savedIndexes.has(i)}
                   className="self-start text-xs px-2 py-1 rounded border border-base-600 text-base-300 hover:text-pos-cyan hover:border-pos-cyan disabled:opacity-40 disabled:hover:text-base-300 disabled:hover:border-base-600 transition-colors"

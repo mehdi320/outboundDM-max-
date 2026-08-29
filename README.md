@@ -42,8 +42,19 @@ Les données sont stockées dans `data/dm-tracker.sqlite3` (créé automatiqueme
   mais varient la forme : longueur (courte 1-2 phrases / développée 4-5 phrases) et structure
   (question ouverte, affirmation directe, référence à l'activité, ton formel/familier).
   Chaque variante se sauvegarde en un clic comme Script B, C, D... Aucun contenu n'est
-  inventé : le texte de base reste le tien, seule la forme est recomposée (l'adaptation
-  tutoiement/vouvoiement est approximative — à relire avant envoi, comme tout le reste).
+  inventé : le texte de base reste le tien, seule la forme est recomposée. Chaque variante
+  applique automatiquement des bonnes pratiques de cold outreach B2B (voir
+  `src/utils/copywritingRules.ts`) :
+  - un seul CTA par message, toujours à faible friction (question ouverte type "ça te dit ?"
+    — les demandes d'appel/rdv/créneau sont détectées et retirées)
+  - pas de jargon corporate ("leverage", "synergie", "best-in-class"...) ni de formules
+    figées façon IA générique ("j'espère que ce message vous trouve bien"...)
+  - recentrage automatique sur le prospect si le "je" domine trop sur le "tu/vous"
+
+  Ce qui ne peut pas être garanti mécaniquement (ex: `{detail}` vraiment connecté au
+  problème du prospect, et non juste décoratif) est signalé par un lint visible sous
+  chaque variante — à vérifier avant de sauvegarder/envoyer, comme tout le reste dans
+  cette app.
 - **Prospects** : ajout manuel ou **import CSV en masse** (colonnes `pseudo`, `plateforme`,
   `detail`), filtrable par plateforme/statut, changement de statut en ligne, dédoublonnage
   automatique
