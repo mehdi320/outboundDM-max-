@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { NewProspect, Platform, Prospect, Statut, UpdateProspect } from "@shared/types";
 import { PLATFORMS, STATUTS, STATUT_LABELS } from "@shared/types";
 import { ProspectImport } from "@/components/ProspectImport";
+import { parseProfileLink } from "@/utils/profileLink";
 
 interface Props {
   produitId: number;
@@ -24,9 +25,11 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
   const [platformFilter, setPlatformFilter] = useState<Platform | "Toutes">("Toutes");
   const [statutFilter, setStatutFilter] = useState<Statut | "Tous">("Tous");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [profileLink, setProfileLink] = useState("");
   const [pseudo, setPseudo] = useState("");
   const [plateforme, setPlateforme] = useState<Platform>("Threads");
   const [detail, setDetail] = useState("");
+  const [linkDetected, setLinkDetected] = useState(false);
 
   const filtered = useMemo(() => {
     return prospects.filter((p) => {
@@ -46,6 +49,20 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
     });
     setPseudo("");
     setDetail("");
+    setProfileLink("");
+    setLinkDetected(false);
+  }
+
+  function handleProfileLinkChange(value: string) {
+    setProfileLink(value);
+    const parsed = parseProfileLink(value);
+    if (parsed) {
+      setPseudo(parsed.pseudo);
+      setPlateforme(parsed.plateforme);
+      setLinkDetected(true);
+    } else {
+      setLinkDetected(false);
+    }
   }
 
   async function handleDelete(id: number, p: string) {
@@ -97,7 +114,24 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
       </div>
 
       {showAddForm && (
-        <div className="flex flex-wrap items-end gap-2 px-4 py-3 border-b border-base-700 bg-base-900/40">
+        <div className="flex flex-col gap-2 px-4 py-3 border-b border-base-700 bg-base-900/40">
+          <label className="text-xs text-base-400 flex flex-col gap-1">
+            Coller un lien de profil (optionnel — remplit pseudo/plateforme automatiquement)
+            <input
+              className="bg-base-900 border border-base-600 rounded px-2 py-1.5 text-sm w-full"
+              value={profileLink}
+              onChange={(e) => handleProfileLinkChange(e.target.value)}
+              placeholder="https://www.threads.net/@pseudo"
+            />
+          </label>
+          {profileLink.trim() && (
+            <p className={`text-xs ${linkDetected ? "text-pos-400" : "text-base-500"}`}>
+              {linkDetected
+                ? `✓ Détecté : @${pseudo} sur ${plateforme}`
+                : "Lien non reconnu — remplis pseudo et plateforme à la main ci-dessous."}
+            </p>
+          )}
+          <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs text-base-400 flex flex-col gap-1">
             Pseudo
             <input
@@ -137,6 +171,7 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
           >
             Ajouter
           </button>
+          </div>
         </div>
       )}
 

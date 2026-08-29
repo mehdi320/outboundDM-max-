@@ -63,9 +63,16 @@ Les données sont stockées dans `data/dm-tracker.sqlite3` (créé automatiqueme
   problème du prospect, et non juste décoratif, ou un message trop long) est signalé par
   un lint visible sous chaque variante — à vérifier avant de sauvegarder/envoyer, comme
   tout le reste dans cette app.
-- **Prospects** : ajout manuel ou **import CSV en masse** (colonnes `pseudo`, `plateforme`,
-  `detail`), filtrable par plateforme/statut, changement de statut en ligne, dédoublonnage
-  automatique
+- **Prospects** : ajout manuel (avec **auto-détection depuis un lien de profil** collé —
+  `threads.net/@pseudo`, `instagram.com/pseudo`, `x.com/pseudo` remplissent pseudo +
+  plateforme automatiquement, par simple analyse de l'URL, aucune requête réseau) ou
+  **import CSV en masse** (colonnes `pseudo`, `plateforme`, `detail`), filtrable par
+  plateforme/statut, changement de statut en ligne, dédoublonnage automatique. Le champ
+  `detail` (personnalisation) reste volontairement manuel : le récupérer automatiquement
+  demanderait de scraper les pages profil (requête réseau, zone grise côté CGU, pages en
+  JS non lisibles par un simple fetch) — et surtout irait à l'encontre de la règle du
+  générateur (`{detail}` doit être une vraie observation humaine connectée au problème,
+  pas une donnée aspirée).
 - **File d'exécution** (le cœur de l'app) : choisis produit + plateforme, l'app assigne
   chaque prospect "à contacter" à un script en rotation équilibrée (A/B/C/A/B/C...), affiche
   le message avec les variables déjà remplies, un prospect à la fois en plein écran. Bouton
@@ -96,6 +103,7 @@ src/
   utils/
     metrics.ts             # calcul des taux et du meilleur script
     generator.ts           # banque de templates du générateur A/B
+    profileLink.ts          # extraction pseudo+plateforme depuis un lien de profil collé
     template.ts             # remplissage des variables {prenom}/{detail}/{produit}
     csv.ts                  # parseur CSV pour l'import de prospects
   components/
