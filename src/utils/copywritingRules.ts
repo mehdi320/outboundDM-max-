@@ -74,6 +74,7 @@ const LOW_FRICTION_QUESTIONS = [
   "Ça te parle ?",
   "T'en penses quoi ?",
   "Ça t'intéresse d'en savoir plus ?",
+  "Je te montre ?",
 ];
 
 const LOW_FRICTION_STATEMENTS = ["Dis-moi si ça te parle.", "Curieux d'avoir ton avis.", "Fais-moi signe si ça t'intéresse."];
@@ -123,6 +124,15 @@ export function normalizeSingleCta(text: string, wantsQuestion: boolean, seed: n
   return `${body} ${cta}`.trim();
 }
 
+// Retire toute phrase correspondant à l'un des déclencheurs donnés. Pas de
+// repli sur le texte d'origine si tout est filtré : mieux vaut un corps vide
+// (le CTA ajouté ensuite comble le message) que de garder une phrase qui
+// enfreint une règle juste pour "ne pas vider le message".
+function removeSentencesMatching(text: string, triggers: RegExp[]): string {
+  const sentences = splitSentences(text);
+  return sentences.filter((s) => !triggers.some((re) => re.test(s))).join(" ");
+}
+
 // --- Formules figées façon IA générique : suppression de la phrase entière (sûr) ---
 const REMOVABLE_FILLER_SENTENCE_TRIGGERS: { pattern: RegExp; label: string }[] = [
   { pattern: phraseRegex("j'espère que ce message vous trouve bien"), label: "j'espère que ce message vous trouve bien" },
@@ -133,10 +143,68 @@ const REMOVABLE_FILLER_SENTENCE_TRIGGERS: { pattern: RegExp; label: string }[] =
 ];
 
 export function stripFillerSentences(text: string): string {
-  const sentences = splitSentences(text);
-  return sentences
-    .filter((s) => !REMOVABLE_FILLER_SENTENCE_TRIGGERS.some(({ pattern }) => pattern.test(s)))
-    .join(" ");
+  return removeSentencesMatching(
+    text,
+    REMOVABLE_FILLER_SENTENCE_TRIGGERS.map((t) => t.pattern)
+  );
+}
+
+// --- Flatterie générique en ouverture ("j'adore ton contenu"...) : jamais un vrai compliment personnalisé ---
+const FLATTERY_TRIGGERS: { pattern: RegExp; label: string }[] = [
+  { pattern: phraseRegex("j'adore ton contenu"), label: "j'adore ton contenu" },
+  { pattern: phraseRegex("j'adore ce que tu fais"), label: "j'adore ce que tu fais" },
+  { pattern: phraseRegex("top ton contenu"), label: "top ton contenu" },
+  { pattern: phraseRegex("super contenu"), label: "super contenu" },
+  { pattern: phraseRegex("génial ce que tu fais"), label: "génial ce que tu fais" },
+  { pattern: phraseRegex("j'adore ton profil"), label: "j'adore ton profil" },
+];
+
+export function stripFlatteryOpeners(text: string): string {
+  return removeSentencesMatching(
+    text,
+    FLATTERY_TRIGGERS.map((t) => t.pattern)
+  );
+}
+
+// --- Urgence artificielle ("plus que quelques places !") : jamais sur un premier contact ---
+const URGENCY_TRIGGERS: { pattern: RegExp; label: string }[] = [
+  { pattern: phraseRegex("plus que quelques places"), label: "plus que quelques places" },
+  { pattern: phraseRegex("offre limitée"), label: "offre limitée" },
+  { pattern: phraseRegex("dernière chance"), label: "dernière chance" },
+  { pattern: phraseRegex("dépêche-toi"), label: "dépêche-toi" },
+  { pattern: phraseRegex("aujourd'hui seulement"), label: "aujourd'hui seulement" },
+  { pattern: phraseRegex("ne rate pas"), label: "ne rate pas" },
+];
+
+export function stripUrgencyLanguage(text: string): string {
+  return removeSentencesMatching(
+    text,
+    URGENCY_TRIGGERS.map((t) => t.pattern)
+  );
+}
+
+// --- Prix/offre : à garder pour une relance dédiée, jamais dans le message d'ouverture ---
+const PRICING_TRIGGERS: RegExp[] = [
+  /\d+\s?(€|\$|eur\b|euros?|dollars?)/iu,
+  phraseRegex("tarif"),
+  phraseRegex("abonnement"),
+  phraseRegex("forfait"),
+  phraseRegex("facturé"),
+];
+
+export function stripPricingDetails(text: string): string {
+  return removeSentencesMatching(text, PRICING_TRIGGERS);
+}
+
+// --- Emoji : jamais plus d'un seul par message ---
+const EMOJI_PATTERN = /\p{Extended_Pictographic}/gu;
+
+export function capEmojis(text: string): string {
+  let count = 0;
+  return text.replace(EMOJI_PATTERN, (match) => {
+    count += 1;
+    return count <= 1 ? match : "";
+  });
 }
 
 // --- Jargon corporate : remplacement par un équivalent simple (sûr, ne casse pas la phrase) ---
@@ -218,6 +286,31 @@ export function lintMessage(text: string): LintIssue[] {
   }
   for (const { pattern, label } of REMOVABLE_FILLER_SENTENCE_TRIGGERS) {
     if (pattern.test(text)) issues.push({ code: "ai_filler", message: `Formule générique type IA détectée : "${label}".` });
+  }
+  for (const { pattern, label } of FLATTERY_TRIGGERS) {
+    if (pattern.test(text)) issues.push({ code: "flattery", message: `Flatterie générique détectée : "${label}" — jamais un vrai compliment personnalisé.` });
+  }
+  for (const { pattern, label } of URGENCY_TRIGGERS) {
+    if (pattern.test(text)) issues.push({ code: "urgency", message: `Langage d'urgence détecté : "${label}" — pas sur un premier contact.` });
+  }
+  if (PRICING_TRIGGERS.some((re) => re.test(text))) {
+    issues.push({
+      code: "pricing_in_opener",
+      message: "Détail de prix/offre détecté — garde-le pour une relance dédiée, pas dans le message d'ouverture.",
+    });
+  }
+
+  const emojiCount = (text.match(EMOJI_PATTERN) ?? []).length;
+  if (emojiCount > 1) {
+    issues.push({ code: "emoji_stacking", message: `${emojiCount} emojis détectés — un seul maximum, pas d'empilement.` });
+  }
+
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  if (wordCount > 60) {
+    issues.push({
+      code: "too_long",
+      message: `${wordCount} mots — un DM à froid vise plutôt 30-50 mots, raccourcis si possible.`,
+    });
   }
 
   if (text.includes("{detail}")) {

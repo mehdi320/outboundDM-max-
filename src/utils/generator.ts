@@ -1,12 +1,16 @@
-import type { GeneratedVariant, Longueur, Structure } from "@shared/types";
+import type { GeneratedVariant, Longueur, Structure, Tone } from "@shared/types";
 import { applyReplacements, splitSentences } from "./text";
 import {
+  capEmojis,
   ensureProspectFirst,
   normalizeSingleCta,
   prependProblemLinkedOpener,
   stripFillerSentences,
+  stripFlatteryOpeners,
   stripHighFrictionCtaSentences,
   stripJargon,
+  stripPricingDetails,
+  stripUrgencyLanguage,
 } from "./copywritingRules";
 
 // Adaptation tu/vous approximative (sur les tournures les plus courantes en DM).
@@ -62,22 +66,30 @@ function buildCourte(sentences: string[]): string {
 interface Combo {
   structure: Structure;
   longueur: Longueur;
+  tone: Tone;
 }
 
+// 5 combinaisons où (structure, longueur) n'est JAMAIS répété : le ton
+// (formel/familier) n'est appliqué que sur des combos par ailleurs déjà
+// uniques, pour ne jamais faire varier le ton seul entre deux variantes —
+// une variante de même longueur/structure avec un simple changement de
+// mots n'est pas un vrai test A/B, juste du bruit (règle du skill
+// dm-prospecting).
 const COMBOS: Combo[] = [
-  { structure: "question_ouverte", longueur: "courte" },
-  { structure: "ton_familier", longueur: "courte" },
-  { structure: "reference_activite", longueur: "developpee" },
-  { structure: "ton_formel", longueur: "developpee" },
-  { structure: "affirmation_directe", longueur: "courte" },
+  { structure: "question_ouverte", longueur: "courte", tone: "neutre" },
+  { structure: "affirmation_directe", longueur: "courte", tone: "neutre" },
+  { structure: "reference_activite", longueur: "developpee", tone: "neutre" },
+  { structure: "question_ouverte", longueur: "developpee", tone: "formel" },
+  { structure: "reference_activite", longueur: "courte", tone: "familier" },
 ];
 
 // Génère 3-5 variantes qui gardent le fond du message de référence mais varient
-// la forme : longueur (courte/développée) et structure (question, affirmation,
-// référence à l'activité, ton formel/familier). Aucun contenu n'est inventé :
-// on recompose/adapte les phrases fournies, puis on applique les règles de
-// cold outreach (prospect avant l'outil, un seul CTA à faible friction, pas
-// de jargon/formules IA génériques) — voir copywritingRules.ts.
+// la forme : longueur (courte/développée), structure d'ouverture (question,
+// affirmation, référence à l'activité) et — en plus, jamais seul — le ton
+// (formel/familier). Aucun contenu n'est inventé : on recompose/adapte les
+// phrases fournies, puis on applique les règles de cold outreach (prospect
+// avant l'outil, un seul CTA à faible friction, pas de jargon/flatterie/
+// urgence/prix dans l'ouverture) — voir copywritingRules.ts.
 export function generateVariantsFromReference(reference: string): GeneratedVariant[] {
   const clean = reference.trim();
   if (!clean) return [];
@@ -85,28 +97,29 @@ export function generateVariantsFromReference(reference: string): GeneratedVaria
   const sentences = splitSentences(clean);
   const courteBase = buildCourte(sentences);
 
-  return COMBOS.map(({ structure, longueur }, i) => {
+  return COMBOS.map(({ structure, longueur, tone }, i) => {
     let base = longueur === "courte" ? courteBase : clean;
 
-    switch (structure) {
-      case "reference_activite":
-        base = prependProblemLinkedOpener(base, i);
-        break;
-      case "ton_formel":
-        base = applyReplacements(base, TU_TO_VOUS);
-        break;
-      case "ton_familier":
-        base = applyReplacements(base, VOUS_TO_TU);
-        break;
-      // question_ouverte / affirmation_directe : le CTA est géré uniformément plus bas
+    if (structure === "reference_activite") {
+      base = prependProblemLinkedOpener(base, i);
+    }
+    if (tone === "formel") {
+      base = applyReplacements(base, TU_TO_VOUS);
+    } else if (tone === "familier") {
+      base = applyReplacements(base, VOUS_TO_TU);
     }
 
-    // pas de formules IA génériques / jargon corporate / demandes à forte friction —
-    // fait avant l'équilibrage des pronoms, car ce nettoyage change le compte
-    // des "je"/"vous" (ex: retirer "j'espère que vous allez bien")
+    // pas de formules IA génériques / flatterie / urgence / prix / jargon /
+    // demandes à forte friction — fait avant l'équilibrage des pronoms, car
+    // ce nettoyage change le compte des "je"/"vous"
+    // (ex: retirer "j'espère que vous allez bien")
     base = stripFillerSentences(base);
+    base = stripFlatteryOpeners(base);
+    base = stripUrgencyLanguage(base);
+    base = stripPricingDetails(base);
     base = stripHighFrictionCtaSentences(base);
     base = stripJargon(base);
+    base = capEmojis(base);
 
     // un seul CTA, à faible friction : question pour toutes les structures
     // sauf l'affirmation directe qui conclut par une relance affirmative
@@ -118,6 +131,6 @@ export function generateVariantsFromReference(reference: string): GeneratedVaria
       base = ensureProspectFirst(base, i);
     }
 
-    return { texte: base, structure, longueur };
+    return { texte: base, structure, longueur, tone };
   });
 }

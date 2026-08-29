@@ -82,23 +82,29 @@ export interface BackupPayload {
 }
 
 export type Longueur = "courte" | "developpee";
-export type Structure =
-  | "question_ouverte"
-  | "affirmation_directe"
-  | "reference_activite"
-  | "ton_formel"
-  | "ton_familier";
+
+// 3 structures d'ouverture (issu du skill dm-prospecting). Le ton (formel/familier)
+// est un axe séparé : on ne fait jamais varier le ton seul entre deux variantes
+// de même longueur/structure — ce ne serait pas un vrai test A/B, juste du bruit.
+export type Structure = "question_ouverte" | "affirmation_directe" | "reference_activite";
 
 export const STRUCTURE_LABELS: Record<Structure, string> = {
   question_ouverte: "Question ouverte",
   affirmation_directe: "Affirmation directe",
   reference_activite: "Référence à l'activité",
-  ton_formel: "Ton formel",
-  ton_familier: "Ton familier",
+};
+
+export type Tone = "neutre" | "formel" | "familier";
+
+export const TONE_LABELS: Record<Tone, string> = {
+  neutre: "Ton d'origine",
+  formel: "Ton formel",
+  familier: "Ton familier",
 };
 
 export interface GeneratedVariant {
   texte: string;
   structure: Structure;
   longueur: Longueur;
+  tone: Tone;
 }

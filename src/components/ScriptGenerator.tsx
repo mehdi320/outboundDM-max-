@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { GeneratedVariant } from "@shared/types";
-import { STRUCTURE_LABELS } from "@shared/types";
+import { STRUCTURE_LABELS, TONE_LABELS } from "@shared/types";
 import { generateVariantsFromReference } from "@/utils/generator";
 import { lintMessage } from "@/utils/copywritingRules";
 
@@ -55,7 +55,8 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
 
   async function handleSaveVariant(variant: GeneratedVariant, index: number) {
     const letter = VARIANT_LETTERS[index] ?? String(index + 2);
-    const label = `Script ${letter} · ${STRUCTURE_LABELS[variant.structure]}`;
+    const toneSuffix = variant.tone !== "neutre" ? ` · ${TONE_LABELS[variant.tone]}` : "";
+    const label = `Script ${letter} · ${STRUCTURE_LABELS[variant.structure]}${toneSuffix}`;
     await onSaveAsScript(label, variant.texte);
     setSavedIndexes((prev) => new Set(prev).add(index));
   }
@@ -67,11 +68,11 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
       </h2>
       <p className="text-xs text-base-500 mb-3">
         Colle ton message habituel : il devient <span className="text-amber-400">Script A</span>, et l'app
-        génère des variantes qui gardent le même fond mais changent la forme (longueur, structure, ton). Les
-        variantes appliquent automatiquement les bonnes pratiques cold outreach (prospect avant l'outil, un
-        seul CTA à faible friction, pas de jargon ni de formules IA génériques) — relis quand même avant
-        d'envoyer, surtout pour vérifier que <code className="text-amber-400">{"{detail}"}</code> est bien
-        connecté au problème du prospect.
+        génère des variantes qui gardent le même fond mais changent la forme (longueur, structure — le ton
+        formel/familier ne varie jamais seul). Les variantes appliquent automatiquement les bonnes pratiques
+        cold outreach (prospect avant l'outil, un seul CTA à faible friction, pas de jargon/flatterie/urgence/
+        prix ni de formules IA génériques) — relis quand même avant d'envoyer, surtout pour vérifier que{" "}
+        <code className="text-amber-400">{"{detail}"}</code> est bien connecté au problème du prospect.
       </p>
 
       <textarea
@@ -117,6 +118,9 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
                   <span className="px-1.5 py-0.5 rounded bg-base-800">
                     {v.longueur === "courte" ? "Court" : "Développé"}
                   </span>
+                  {v.tone !== "neutre" && (
+                    <span className="px-1.5 py-0.5 rounded bg-base-800">{TONE_LABELS[v.tone]}</span>
+                  )}
                 </div>
                 <p className="text-sm text-base-200 whitespace-pre-wrap flex-1">{v.texte}</p>
                 <LintBadges text={v.texte} />

@@ -39,22 +39,30 @@ Les données sont stockées dans `data/dm-tracker.sqlite3` (créé automatiqueme
   `{prenom}` `{detail}` `{produit}`
 - **Générateur de variantes A/B** : colle un message déjà rédigé (message de référence) — il
   devient automatiquement **Script A**. L'app génère 5 variantes qui gardent le même fond
-  mais varient la forme : longueur (courte 1-2 phrases / développée 4-5 phrases) et structure
-  (question ouverte, affirmation directe, référence à l'activité, ton formel/familier).
-  Chaque variante se sauvegarde en un clic comme Script B, C, D... Aucun contenu n'est
-  inventé : le texte de base reste le tien, seule la forme est recomposée. Chaque variante
-  applique automatiquement des bonnes pratiques de cold outreach B2B (voir
-  `src/utils/copywritingRules.ts`) :
+  mais varient la forme sur deux axes indépendants (règle du skill `dm-prospecting` :
+  ne jamais faire varier le ton seul) :
+  - **longueur** : courte (1-2 phrases) / développée (3-5 phrases)
+  - **structure** : question ouverte, affirmation directe, référence à l'activité
+
+  Le ton (formel/familier) n'est appliqué qu'en plus d'un changement de longueur ou de
+  structure, jamais seul — une variante identique en longueur/structure avec juste des
+  mots swappés n'est pas un vrai test A/B. Chaque variante se sauvegarde en un clic comme
+  Script B, C, D... Aucun contenu n'est inventé : le texte de base reste le tien, seule la
+  forme est recomposée. Chaque variante applique automatiquement des bonnes pratiques de
+  cold outreach B2B (voir `src/utils/copywritingRules.ts`, basé sur le skill Claude Code
+  `.claude/skills/dm-prospecting/`) :
   - un seul CTA par message, toujours à faible friction (question ouverte type "ça te dit ?"
     — les demandes d'appel/rdv/créneau sont détectées et retirées)
-  - pas de jargon corporate ("leverage", "synergie", "best-in-class"...) ni de formules
-    figées façon IA générique ("j'espère que ce message vous trouve bien"...)
+  - pas de jargon corporate, de formules IA génériques, de flatterie ("j'adore ton
+    contenu"), de langage d'urgence ("plus que quelques places") ni de détail de prix dans
+    l'ouverture (à garder pour une relance dédiée)
+  - pas plus d'un emoji par message
   - recentrage automatique sur le prospect si le "je" domine trop sur le "tu/vous"
 
   Ce qui ne peut pas être garanti mécaniquement (ex: `{detail}` vraiment connecté au
-  problème du prospect, et non juste décoratif) est signalé par un lint visible sous
-  chaque variante — à vérifier avant de sauvegarder/envoyer, comme tout le reste dans
-  cette app.
+  problème du prospect, et non juste décoratif, ou un message trop long) est signalé par
+  un lint visible sous chaque variante — à vérifier avant de sauvegarder/envoyer, comme
+  tout le reste dans cette app.
 - **Prospects** : ajout manuel ou **import CSV en masse** (colonnes `pseudo`, `plateforme`,
   `detail`), filtrable par plateforme/statut, changement de statut en ligne, dédoublonnage
   automatique
