@@ -5,6 +5,7 @@ export const PLATFORMS: Platform[] = ["Instagram", "Threads", "Twitter"];
 export interface Product {
   id: number;
   nom: string;
+  objectif_dm_jour: number | null;
   created_at: string;
 }
 
@@ -30,6 +31,15 @@ export interface Entry {
 }
 
 export type NewProduct = Pick<Product, "nom">;
+export type UpdateProduct = Partial<Pick<Product, "nom" | "objectif_dm_jour">>;
 export type NewScript = Pick<Script, "produit_id" | "label" | "contenu">;
 export type NewEntry = Omit<Entry, "id" | "created_at">;
 export type UpdateEntry = Partial<NewEntry>;
+
+export interface BackupPayload {
+  version: 1;
+  exported_at: string;
+  products: Product[];
+  scripts: Script[];
+  entries: Entry[];
+}

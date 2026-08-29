@@ -1,16 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ProductTabs } from "@/components/ProductTabs";
 import { ScriptManager } from "@/components/ScriptManager";
 import { EntryForm } from "@/components/EntryForm";
 import { Dashboard } from "@/components/Dashboard";
 import { Journal } from "@/components/Journal";
 import { ExportButton } from "@/components/ExportButton";
+import { BackupControls } from "@/components/BackupControls";
+import { DailyGoal } from "@/components/DailyGoal";
 import { useProducts } from "@/hooks/useProducts";
 import { useScripts } from "@/hooks/useScripts";
 import { useEntries } from "@/hooks/useEntries";
 
 export default function App() {
-  const { products, loading: loadingProducts, createProduct, removeProduct } = useProducts();
+  const {
+    products,
+    loading: loadingProducts,
+    createProduct,
+    updateProduct,
+    removeProduct,
+  } = useProducts();
   const [activeProductId, setActiveProductId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -22,17 +30,25 @@ export default function App() {
     }
   }, [products, activeProductId]);
 
+  const activeProduct = useMemo(
+    () => products.find((p) => p.id === activeProductId) ?? null,
+    [products, activeProductId]
+  );
+
   const { scripts, createScript, removeScript } = useScripts(activeProductId);
   const { entries, createEntry, updateEntry, removeEntry } = useEntries(activeProductId);
 
   return (
     <div className="min-h-screen bg-base-950 text-base-100 flex flex-col">
-      <header className="border-b border-base-800 px-4 py-3 flex items-center justify-between">
+      <header className="border-b border-base-800 px-4 py-3 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-base font-bold tracking-tight">DM Tracker</h1>
           <p className="text-xs text-base-500">Suivi de prospection — Instagram / Threads / Twitter</p>
         </div>
-        <ExportButton />
+        <div className="flex items-center gap-3">
+          <ExportButton />
+          <BackupControls />
+        </div>
       </header>
 
       <ProductTabs
@@ -53,8 +69,14 @@ export default function App() {
               Utilise le bouton "+ Produit" en haut pour créer ton premier produit à suivre.
             </p>
           </div>
-        ) : activeProductId != null ? (
+        ) : activeProductId != null && activeProduct != null ? (
           <>
+            <DailyGoal
+              product={activeProduct}
+              entries={entries}
+              onSetGoal={(objectif) => updateProduct(activeProduct.id, { objectif_dm_jour: objectif })}
+            />
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <ScriptManager scripts={scripts} onCreate={createScript} onDelete={removeScript} />
               <EntryForm produitId={activeProductId} scripts={scripts} onSubmit={createEntry} />
@@ -67,6 +89,7 @@ export default function App() {
               scripts={scripts}
               onUpdate={updateEntry}
               onDelete={removeEntry}
+              onCreate={createEntry}
             />
           </>
         ) : null}

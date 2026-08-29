@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import type { Entry, Platform, Script } from "@shared/types";
 import { PlatformFilter } from "@/components/PlatformFilter";
 import { ScriptCard } from "@/components/ScriptCard";
+import { PlatformMatrix } from "@/components/PlatformMatrix";
+import { TrendChart } from "@/components/TrendChart";
 import { computeAllScriptMetrics, findBestScript } from "@/utils/metrics";
 
 interface Props {
@@ -46,14 +48,20 @@ export function Dashboard({ scripts, entries }: Props) {
           Aucune donnée pour ce filtre.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {metrics
-            .sort((a, b) => b.tauxReponse - a.tauxReponse)
-            .map((m) => (
-              <ScriptCard key={m.script.id} metrics={m} isBest={best?.script.id === m.script.id} />
-            ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {metrics
+              .sort((a, b) => b.tauxReponse - a.tauxReponse)
+              .map((m) => (
+                <ScriptCard key={m.script.id} metrics={m} isBest={best?.script.id === m.script.id} />
+              ))}
+          </div>
+
+          <TrendChart scripts={scripts} entries={filteredEntries} />
+        </>
       )}
+
+      <PlatformMatrix scripts={scripts} entries={entries} />
     </div>
   );
 }

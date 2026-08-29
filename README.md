@@ -20,7 +20,7 @@ Ouvre `http://localhost:5173`. Les données sont stockées dans `data/dm-tracker
 
 ## Modèle de données
 
-- **Produit** : `id`, `nom`
+- **Produit** : `id`, `nom`, `objectif_dm_jour` (optionnel)
 - **Script** : `id`, `produit_id`, `label`, `contenu` (texte libre optionnel)
 - **Entrée journalière** : `id`, `produit_id`, `script_id`, `plateforme`, `date`, `nb_dm_envoyes`, `nb_reponses`, `nb_deals_closes`, `note`
 
@@ -31,23 +31,28 @@ Ouvre `http://localhost:5173`. Les données sont stockées dans `data/dm-tracker
 - Formulaire d'ajout d'entrée (produit/script/plateforme/date pré-remplie à aujourd'hui + les 3 chiffres + note)
 - Dashboard par script : total envoyés, taux de réponse, taux de close/répondants, taux de close global, avec mise en avant automatique du meilleur script (taux de réponse le plus haut, seuil d'éligibilité de 10 DM envoyés)
 - Filtre par plateforme sur le dashboard
-- Journal chronologique éditable et supprimable, ligne par ligne
+- **Objectif quotidien** de DM par produit avec barre de progression (basée sur les entrées du jour)
+- **Tableau croisé Script × Plateforme** : compare le taux de réponse de chaque script sur chaque plateforme en un coup d'œil
+- **Tendance temporelle** : mini graphique d'évolution du taux de réponse par script, agrégé par semaine, pour repérer un script qui s'essouffle
+- Journal chronologique éditable et supprimable, ligne par ligne, avec **recherche** (script/plateforme/note), **tri par colonne** et **duplication rapide** d'une entrée (pour logger vite au quotidien)
 - Export CSV de toutes les entrées
+- **Sauvegarde / restauration JSON complète** (produits + scripts + entrées) pour se prémunir d'une perte de données — la restauration remplace intégralement les données actuelles après confirmation
 
 ## Structure du projet
 
 ```
-shared/types.ts        # types partagés front/back (Product, Script, Entry...)
+shared/types.ts        # types partagés front/back (Product, Script, Entry, BackupPayload...)
 server/
-  db.ts                 # init SQLite + schéma
+  db.ts                 # init SQLite + schéma + migrations idempotentes
   index.ts              # serveur Express
-  routes/                # products.ts, scripts.ts, entries.ts, export.ts
+  routes/                # products.ts, scripts.ts, entries.ts, export.ts, backup.ts
 src/
   api/client.ts          # wrapper fetch vers l'API
   hooks/                 # useProducts, useScripts, useEntries
   utils/metrics.ts       # calcul des taux et du meilleur script
   components/             # ProductTabs, ScriptManager, EntryForm, Dashboard,
-                          # ScriptCard, PlatformFilter, Journal, JournalRow, ExportButton
+                          # ScriptCard, PlatformFilter, PlatformMatrix, TrendChart,
+                          # DailyGoal, Journal, JournalRow, ExportButton, BackupControls
   App.tsx
 data/                    # fichier SQLite local (créé au runtime, gitignored)
 ```

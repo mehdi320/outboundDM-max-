@@ -7,9 +7,10 @@ interface Props {
   scripts: Script[];
   onUpdate: (id: number, data: UpdateEntry) => Promise<unknown>;
   onDelete: (id: number) => Promise<unknown>;
+  onDuplicate: (entry: Entry) => Promise<unknown>;
 }
 
-export function JournalRow({ entry, scripts, onUpdate, onDelete }: Props) {
+export function JournalRow({ entry, scripts, onUpdate, onDelete, onDuplicate }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Entry>(entry);
   const [saving, setSaving] = useState(false);
@@ -60,6 +61,13 @@ export function JournalRow({ entry, scripts, onUpdate, onDelete }: Props) {
             }}
           >
             Éditer
+          </button>
+          <button
+            className="text-xs text-base-400 hover:text-pos-cyan mr-3"
+            onClick={() => onDuplicate(entry)}
+            title="Créer une nouvelle entrée aujourd'hui avec le même script/plateforme"
+          >
+            Dupliquer
           </button>
           <button className="text-xs text-base-400 hover:text-neg-500" onClick={handleDelete}>
             Supprimer

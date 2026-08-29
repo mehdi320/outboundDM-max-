@@ -19,6 +19,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nom TEXT NOT NULL UNIQUE,
+    objectif_dm_jour INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -48,3 +49,8 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_entries_script ON entries(script_id);
   CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date);
 `);
+
+const productColumns = db.prepare("PRAGMA table_info(products)").all() as { name: string }[];
+if (!productColumns.some((c) => c.name === "objectif_dm_jour")) {
+  db.exec("ALTER TABLE products ADD COLUMN objectif_dm_jour INTEGER");
+}

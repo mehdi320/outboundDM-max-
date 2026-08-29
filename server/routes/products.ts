@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db.js";
-import type { NewProduct, Product } from "../../shared/types.js";
+import type { NewProduct, Product, UpdateProduct } from "../../shared/types.js";
 
 export const productsRouter = Router();
 
@@ -26,6 +26,33 @@ productsRouter.post("/", (req, res) => {
     res.status(201).json(product);
   } catch (err) {
     res.status(400).json({ error: "Ce produit existe déjà." });
+  }
+});
+
+productsRouter.put("/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const existing = db.prepare("SELECT * FROM products WHERE id = ?").get(id) as
+    | Product
+    | undefined;
+  if (!existing) return res.status(404).json({ error: "Produit introuvable." });
+
+  const body = req.body as UpdateProduct;
+  const nom = body.nom !== undefined ? body.nom.trim() : existing.nom;
+  const objectif =
+    body.objectif_dm_jour !== undefined ? body.objectif_dm_jour : existing.objectif_dm_jour;
+
+  if (!nom) return res.status(400).json({ error: "Le nom du produit est requis." });
+
+  try {
+    db.prepare("UPDATE products SET nom = ?, objectif_dm_jour = ? WHERE id = ?").run(
+      nom,
+      objectif,
+      id
+    );
+    const updated = db.prepare("SELECT * FROM products WHERE id = ?").get(id) as Product;
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: "Ce nom de produit existe déjà." });
   }
 });
 

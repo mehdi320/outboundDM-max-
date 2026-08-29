@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Product } from "@shared/types";
+import type { Product, UpdateProduct } from "@shared/types";
 import { api } from "@/api/client";
 
 export function useProducts() {
@@ -33,6 +33,15 @@ export function useProducts() {
     [refresh]
   );
 
+  const updateProduct = useCallback(
+    async (id: number, data: UpdateProduct) => {
+      const product = await api.products.update(id, data);
+      await refresh();
+      return product;
+    },
+    [refresh]
+  );
+
   const removeProduct = useCallback(
     async (id: number) => {
       await api.products.remove(id);
@@ -41,5 +50,5 @@ export function useProducts() {
     [refresh]
   );
 
-  return { products, loading, error, refresh, createProduct, removeProduct };
+  return { products, loading, error, refresh, createProduct, updateProduct, removeProduct };
 }

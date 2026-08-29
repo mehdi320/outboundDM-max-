@@ -1,12 +1,14 @@
 import type {
   Product,
   NewProduct,
+  UpdateProduct,
   Script,
   NewScript,
   Entry,
   NewEntry,
   UpdateEntry,
   Platform,
+  BackupPayload,
 } from "@shared/types";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -27,6 +29,8 @@ export const api = {
     list: () => request<Product[]>("/api/products"),
     create: (data: NewProduct) =>
       request<Product>("/api/products", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: UpdateProduct) =>
+      request<Product>(`/api/products/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     remove: (id: number) => request<void>(`/api/products/${id}`, { method: "DELETE" }),
   },
   scripts: {
@@ -53,4 +57,12 @@ export const api = {
     remove: (id: number) => request<void>(`/api/entries/${id}`, { method: "DELETE" }),
   },
   exportCsvUrl: () => "/api/export/csv",
+  backup: {
+    exportJsonUrl: () => "/api/backup/json",
+    importJson: (payload: BackupPayload) =>
+      request<{ ok: true; products: number; scripts: number; entries: number }>(
+        "/api/backup/json",
+        { method: "POST", body: JSON.stringify(payload) }
+      ),
+  },
 };
