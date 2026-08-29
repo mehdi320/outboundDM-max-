@@ -3,6 +3,7 @@ import type { NewProspect, Platform, Prospect, Statut, UpdateProspect } from "@s
 import { PLATFORMS, STATUTS, STATUT_LABELS } from "@shared/types";
 import { ProspectImport } from "@/components/ProspectImport";
 import { parseProfileLink } from "@/utils/profileLink";
+import { errorMessage, useToast } from "@/components/Toast";
 
 interface Props {
   produitId: number;
@@ -30,6 +31,7 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
   const [plateforme, setPlateforme] = useState<Platform>("Threads");
   const [detail, setDetail] = useState("");
   const [linkDetected, setLinkDetected] = useState(false);
+  const { showError } = useToast();
 
   const filtered = useMemo(() => {
     return prospects.filter((p) => {
@@ -41,16 +43,20 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
 
   async function handleAdd() {
     if (!pseudo.trim()) return;
-    await onCreate({
-      produit_id: produitId,
-      pseudo: pseudo.trim().replace(/^@/, ""),
-      plateforme,
-      detail_personnalisation: detail.trim() || null,
-    });
-    setPseudo("");
-    setDetail("");
-    setProfileLink("");
-    setLinkDetected(false);
+    try {
+      await onCreate({
+        produit_id: produitId,
+        pseudo: pseudo.trim().replace(/^@/, ""),
+        plateforme,
+        detail_personnalisation: detail.trim() || null,
+      });
+      setPseudo("");
+      setDetail("");
+      setProfileLink("");
+      setLinkDetected(false);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible d'ajouter ce prospect."));
+    }
   }
 
   function handleProfileLinkChange(value: string) {
@@ -67,10 +73,29 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
 
   async function handleDelete(id: number, p: string) {
     if (!confirm(`Supprimer le prospect "${p}" ?`)) return;
-    await onDelete(id);
+    try {
+      await onDelete(id);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de supprimer ce prospect."));
+    }
   }
 
-  const bulkImport = (rows: Omit<NewProspect, "produit_id">[]) => onBulkCreate(rows);
+  async function handleStatutChange(id: number, statut: Statut) {
+    try {
+      await onUpdate(id, { statut });
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de mettre à jour le statut."));
+    }
+  }
+
+  const bulkImport = async (rows: Omit<NewProspect, "produit_id">[]) => {
+    try {
+      return await onBulkCreate(rows);
+    } catch (err) {
+      showError(errorMessage(err, "Échec de l'import CSV."));
+      throw err;
+    }
+  };
 
   return (
     <div className="bg-base-850 border border-base-700 rounded-lg overflow-hidden">
@@ -202,13 +227,13 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
                   <td className="px-3 py-2 text-base-100 font-medium">{p.pseudo}</td>
                   <td className="px-3 py-2 text-base-300">{p.plateforme}</td>
                   <td className="px-3 py-2 text-base-400 text-xs max-w-[240px] truncate" title={p.detail_personnalisation ?? ""}>
-                    {p.detail_personnalisation}
+                    {p.detail_personnalisation || <span className="text-base-600">—</span>}
                   </td>
                   <td className="px-3 py-2">
                     <select
                       className={`bg-base-900 border border-base-700 rounded px-2 py-1 text-xs ${STATUT_COLORS[p.statut]}`}
                       value={p.statut}
-                      onChange={(e) => onUpdate(p.id, { statut: e.target.value as Statut })}
+                      onChange={(e) => handleStatutChange(p.id, e.target.value as Statut)}
                     >
                       {STATUTS.map((s) => (
                         <option key={s} value={s}>

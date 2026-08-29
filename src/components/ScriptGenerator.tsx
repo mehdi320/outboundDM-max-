@@ -3,6 +3,7 @@ import type { GeneratedVariant } from "@shared/types";
 import { STRUCTURE_LABELS, TONE_LABELS } from "@shared/types";
 import { generateVariantsFromReference } from "@/utils/generator";
 import { lintMessage } from "@/utils/copywritingRules";
+import { errorMessage, useToast } from "@/components/Toast";
 
 interface Props {
   onSaveAsScript: (label: string, contenu: string) => Promise<unknown>;
@@ -31,9 +32,14 @@ function LintBadges({ text }: { text: string }) {
 export function ScriptGenerator({ onSaveAsScript }: Props) {
   const [reference, setReference] = useState("");
   const [variants, setVariants] = useState<GeneratedVariant[]>([]);
-  const [scriptASaved, setScriptASaved] = useState(false);
+  // texte exact déjà sauvegardé comme Script A (pas juste un booléen : si la
+  // référence change, ce texte ne correspond plus et il faut re-proposer la sauvegarde)
+  const [savedReferenceText, setSavedReferenceText] = useState<string | null>(null);
   const [savingA, setSavingA] = useState(false);
   const [savedIndexes, setSavedIndexes] = useState<Set<number>>(new Set());
+  const { showError } = useToast();
+
+  const scriptASaved = savedReferenceText === reference.trim();
 
   async function handleGenerate() {
     const clean = reference.trim();
@@ -42,11 +48,13 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
     setVariants(generateVariantsFromReference(clean));
     setSavedIndexes(new Set());
 
-    if (!scriptASaved) {
+    if (savedReferenceText !== clean) {
       setSavingA(true);
       try {
         await onSaveAsScript("Script A", clean);
-        setScriptASaved(true);
+        setSavedReferenceText(clean);
+      } catch (err) {
+        showError(errorMessage(err, "Impossible de sauvegarder le message de référence."));
       } finally {
         setSavingA(false);
       }
@@ -57,8 +65,12 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
     const letter = VARIANT_LETTERS[index] ?? String(index + 2);
     const toneSuffix = variant.tone !== "neutre" ? ` · ${TONE_LABELS[variant.tone]}` : "";
     const label = `Script ${letter} · ${STRUCTURE_LABELS[variant.structure]}${toneSuffix}`;
-    await onSaveAsScript(label, variant.texte);
-    setSavedIndexes((prev) => new Set(prev).add(index));
+    try {
+      await onSaveAsScript(label, variant.texte);
+      setSavedIndexes((prev) => new Set(prev).add(index));
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de sauvegarder cette variante."));
+    }
   }
 
   return (

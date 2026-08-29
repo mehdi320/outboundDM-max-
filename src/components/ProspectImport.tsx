@@ -32,6 +32,8 @@ export function ProspectImport({ onImport }: Props) {
       const res = await onImport(preview.prospects);
       setResult(res);
       setPreview(null);
+    } catch {
+      // déjà signalé à l'utilisateur par le composant parent (toast)
     } finally {
       setImporting(false);
     }

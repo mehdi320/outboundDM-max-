@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db.js";
-import { mapLog } from "../helpers.js";
+import { isUniqueConstraintError, mapLog } from "../helpers.js";
 import type { NewProspect, UpdateProspect, Prospect, Statut, Platform } from "../../shared/types.js";
 
 export const prospectsRouter = Router();
@@ -59,7 +59,10 @@ prospectsRouter.post("/", (req, res) => {
     const prospect = db.prepare("SELECT * FROM prospects WHERE id = ?").get(result.lastInsertRowid);
     res.status(201).json(prospect);
   } catch (err) {
-    res.status(400).json({ error: "Ce prospect existe déjà pour ce produit et cette plateforme." });
+    if (isUniqueConstraintError(err)) {
+      return res.status(400).json({ error: "Ce prospect existe déjà pour ce produit et cette plateforme." });
+    }
+    res.status(500).json({ error: "Erreur serveur lors de la création du prospect." });
   }
 });
 

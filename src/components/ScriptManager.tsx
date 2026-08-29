@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Script, UpdateScript } from "@shared/types";
+import { errorMessage, useToast } from "@/components/Toast";
 
 interface Props {
   scripts: Script[];
@@ -15,18 +16,27 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editContenu, setEditContenu] = useState("");
+  const { showError } = useToast();
 
   async function handleCreate() {
     const trimmed = label.trim();
     if (!trimmed) return;
-    await onCreate(trimmed, contenu.trim() || null);
-    setLabel("");
-    setContenu("");
+    try {
+      await onCreate(trimmed, contenu.trim() || null);
+      setLabel("");
+      setContenu("");
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de créer le script."));
+    }
   }
 
   async function handleDelete(id: number, scriptLabel: string) {
     if (!confirm(`Supprimer le script "${scriptLabel}" et ses logs associés ?`)) return;
-    await onDelete(id);
+    try {
+      await onDelete(id);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de supprimer le script."));
+    }
   }
 
   function startEdit(s: Script) {
@@ -37,8 +47,20 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
   }
 
   async function saveEdit(id: number) {
-    await onUpdate(id, { label: editLabel.trim(), contenu: editContenu.trim() || null });
-    setEditingId(null);
+    try {
+      await onUpdate(id, { label: editLabel.trim(), contenu: editContenu.trim() || null });
+      setEditingId(null);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de sauvegarder le script."));
+    }
+  }
+
+  async function handleToggleActif(id: number, actif: boolean) {
+    try {
+      await onUpdate(id, { actif });
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de mettre à jour le script."));
+    }
   }
 
   const nbActifs = scripts.filter((s) => s.actif).length;
@@ -64,12 +86,13 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
             className={`border rounded-md ${s.actif ? "border-base-700" : "border-base-800 opacity-60"}`}
           >
             <div className="flex items-center justify-between px-3 py-2 gap-2">
-              <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <input
                   type="checkbox"
                   checked={s.actif}
-                  onChange={(e) => onUpdate(s.id, { actif: e.target.checked })}
+                  onChange={(e) => handleToggleActif(s.id, e.target.checked)}
                   title="Actif dans la rotation A/B de la file d'exécution"
+                  className="shrink-0 cursor-pointer"
                 />
                 <button
                   type="button"
@@ -78,7 +101,7 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
                 >
                   {s.label}
                 </button>
-              </label>
+              </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button className="text-xs text-base-400 hover:text-amber-400" onClick={() => startEdit(s)}>
                   Éditer

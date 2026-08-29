@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Product } from "@shared/types";
+import { errorMessage, useToast } from "@/components/Toast";
 
 interface Props {
   products: Product[];
@@ -12,18 +13,27 @@ interface Props {
 export function ProductTabs({ products, activeId, onSelect, onCreate, onDelete }: Props) {
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
+  const { showError } = useToast();
 
   async function handleCreate() {
     const nom = newName.trim();
     if (!nom) return;
-    await onCreate(nom);
-    setNewName("");
-    setAdding(false);
+    try {
+      await onCreate(nom);
+      setNewName("");
+      setAdding(false);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de créer le produit."));
+    }
   }
 
   async function handleDelete(id: number, nom: string) {
     if (!confirm(`Supprimer le produit "${nom}" et toutes ses données associées ?`)) return;
-    await onDelete(id);
+    try {
+      await onDelete(id);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de supprimer le produit."));
+    }
   }
 
   return (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Log, Platform, Product, Prospect, Script } from "@shared/types";
 import { PLATFORMS } from "@shared/types";
 import { renderTemplate } from "@/utils/template";
+import { errorMessage, useToast } from "@/components/Toast";
 
 interface Props {
   product: Product;
@@ -36,6 +37,7 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
   const [cursor, setCursor] = useState(0);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { showError } = useToast();
 
   const scriptsActifs = useMemo(() => scripts.filter((s) => s.actif), [scripts]);
 
@@ -57,70 +59,102 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
 
   async function handleCopy() {
     if (!message) return;
-    await navigator.clipboard.writeText(message);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      showError("Impossible de copier automatiquement — sélectionne le texte et copie-le à la main.");
+    }
   }
 
   async function handleNext() {
-    if (!current) return;
+    if (!current || busy) return;
     setBusy(true);
     try {
       await onContact(current.prospect.id, current.script.id);
       setCursor((c) => c + 1);
       setCopied(false);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de marquer ce prospect comme contacté."));
     } finally {
       setBusy(false);
     }
   }
 
   function handleSkip() {
+    if (!current) return;
     setCursor((c) => c + 1);
     setCopied(false);
   }
 
   async function handleIgnore() {
-    if (!current) return;
+    if (!current || busy) return;
     setBusy(true);
     try {
       await onIgnore(current.prospect.id);
       setCursor((c) => c + 1);
       setCopied(false);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible d'ignorer ce prospect."));
     } finally {
       setBusy(false);
     }
   }
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!current || busy) return;
+      if (e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        handleCopy();
+      } else if (e.key === "Enter" || e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === "s" || e.key === "S") {
+        e.preventDefault();
+        handleSkip();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, busy, message]);
+
   return (
     <div className="min-h-screen bg-base-950 text-base-100 flex flex-col">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-base-800">
-        <button className="text-sm text-base-400 hover:text-base-100" onClick={onExit}>
-          ← Quitter
-        </button>
-        <div className="flex items-center gap-1 bg-base-900 border border-base-700 rounded-md p-1">
-          {PLATFORMS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPlateforme(p)}
-              className={`text-xs px-3 py-1.5 rounded font-medium transition-colors ${
-                plateforme === p
-                  ? "bg-amber-600 text-base-950"
-                  : "text-base-300 hover:text-base-100 hover:bg-base-800"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-        <div className="text-right">
-          <div className="font-mono text-sm text-base-200">
-            {Math.min(cursor, queue.length)}/{queue.length} traités
-          </div>
-          {product.objectif_dm_jour != null && (
-            <div className="text-xs text-base-500">
-              {envoyesAujourdhui}/{product.objectif_dm_jour} DM aujourd'hui
+      <header className="border-b border-base-800">
+        <div className="flex items-center justify-between px-4 py-2">
+          <button className="text-sm text-base-400 hover:text-base-100 shrink-0" onClick={onExit}>
+            ← Quitter
+          </button>
+          <div className="text-right shrink-0">
+            <div className="font-mono text-sm text-base-200">
+              {Math.min(cursor, queue.length)}/{queue.length} traités
             </div>
-          )}
+            {product.objectif_dm_jour != null && (
+              <div className="text-xs text-base-500">
+                {envoyesAujourdhui}/{product.objectif_dm_jour} DM aujourd'hui
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-1 px-4 pb-2">
+          <div className="flex items-center gap-1 bg-base-900 border border-base-700 rounded-md p-1">
+            {PLATFORMS.map((p) => (
+              <button
+                key={p}
+                onClick={() => setPlateforme(p)}
+                className={`text-xs px-3 py-1.5 rounded font-medium transition-colors ${
+                  plateforme === p
+                    ? "bg-amber-600 text-base-950"
+                    : "text-base-300 hover:text-base-100 hover:bg-base-800"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -170,7 +204,7 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
                   : "bg-amber-600 hover:bg-amber-500 text-base-950"
               }`}
             >
-              {copied ? "✓ Copié !" : "📋 Copier le message"}
+              {copied ? "✓ Copié !" : "📋 Copier le message"} <span className="text-sm font-normal opacity-60">(C)</span>
             </button>
 
             <button
@@ -178,7 +212,7 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
               disabled={busy}
               className="w-full text-lg font-semibold py-4 rounded-lg bg-pos-500 hover:bg-pos-400 text-base-950 disabled:opacity-40 transition-colors"
             >
-              Suivant →
+              Suivant → <span className="text-sm font-normal opacity-60">(Entrée)</span>
             </button>
 
             <div className="flex justify-center gap-6 pt-2">
@@ -187,7 +221,7 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
                 disabled={busy}
                 className="text-sm text-base-400 hover:text-base-200 disabled:opacity-40"
               >
-                Passer
+                Passer <span className="opacity-60">(S)</span>
               </button>
               <button
                 onClick={handleIgnore}

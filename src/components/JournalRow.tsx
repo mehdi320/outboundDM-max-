@@ -1,4 +1,5 @@
 import type { Log } from "@shared/types";
+import { errorMessage, useToast } from "@/components/Toast";
 
 interface Props {
   log: Log;
@@ -33,9 +34,23 @@ function FlagButton({
 }
 
 export function JournalRow({ log, scriptLabel, prospectPseudo, onToggle, onDelete }: Props) {
+  const { showError } = useToast();
+
   async function handleDelete() {
     if (!confirm("Supprimer ce log ?")) return;
-    await onDelete(log.id);
+    try {
+      await onDelete(log.id);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de supprimer ce log."));
+    }
+  }
+
+  async function handleToggle(field: "envoye" | "reponse" | "close", value: boolean) {
+    try {
+      await onToggle(log.id, field, value);
+    } catch (err) {
+      showError(errorMessage(err, "Impossible de mettre à jour ce log."));
+    }
   }
 
   return (
@@ -47,7 +62,7 @@ export function JournalRow({ log, scriptLabel, prospectPseudo, onToggle, onDelet
       <td className="px-3 py-2 text-center">
         <FlagButton
           active={log.envoye}
-          onClick={() => onToggle(log.id, "envoye", !log.envoye)}
+          onClick={() => handleToggle("envoye", !log.envoye)}
           label="Envoyé"
           activeClass="bg-pos-cyan text-base-950"
         />
@@ -55,7 +70,7 @@ export function JournalRow({ log, scriptLabel, prospectPseudo, onToggle, onDelet
       <td className="px-3 py-2 text-center">
         <FlagButton
           active={log.reponse}
-          onClick={() => onToggle(log.id, "reponse", !log.reponse)}
+          onClick={() => handleToggle("reponse", !log.reponse)}
           label="Réponse"
           activeClass="bg-amber-500 text-base-950"
         />
@@ -63,13 +78,13 @@ export function JournalRow({ log, scriptLabel, prospectPseudo, onToggle, onDelet
       <td className="px-3 py-2 text-center">
         <FlagButton
           active={log.close}
-          onClick={() => onToggle(log.id, "close", !log.close)}
+          onClick={() => handleToggle("close", !log.close)}
           label="Closé"
           activeClass="bg-pos-500 text-base-950"
         />
       </td>
       <td className="px-3 py-2 text-base-400 text-xs max-w-[200px] truncate" title={log.note ?? ""}>
-        {log.note}
+        {log.note || <span className="text-base-600">—</span>}
       </td>
       <td className="px-3 py-2 text-right">
         <button className="text-xs text-base-400 hover:text-neg-500" onClick={handleDelete}>

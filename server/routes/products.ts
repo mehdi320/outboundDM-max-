@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "../db.js";
+import { isUniqueConstraintError } from "../helpers.js";
 import type { NewProduct, Product, UpdateProduct } from "../../shared/types.js";
 
 export const productsRouter = Router();
@@ -25,7 +26,10 @@ productsRouter.post("/", (req, res) => {
       .get(result.lastInsertRowid) as Product;
     res.status(201).json(product);
   } catch (err) {
-    res.status(400).json({ error: "Ce produit existe déjà." });
+    if (isUniqueConstraintError(err)) {
+      return res.status(400).json({ error: "Ce produit existe déjà." });
+    }
+    res.status(500).json({ error: "Erreur serveur lors de la création du produit." });
   }
 });
 
@@ -52,7 +56,10 @@ productsRouter.put("/:id", (req, res) => {
     const updated = db.prepare("SELECT * FROM products WHERE id = ?").get(id) as Product;
     res.json(updated);
   } catch (err) {
-    res.status(400).json({ error: "Ce nom de produit existe déjà." });
+    if (isUniqueConstraintError(err)) {
+      return res.status(400).json({ error: "Ce nom de produit existe déjà." });
+    }
+    res.status(500).json({ error: "Erreur serveur lors de la mise à jour du produit." });
   }
 });
 

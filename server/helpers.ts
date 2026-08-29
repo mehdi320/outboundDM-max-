@@ -1,3 +1,5 @@
+import type { Platform } from "../shared/types.js";
+
 export function toBool(value: unknown): boolean {
   return value === 1 || value === true;
 }
@@ -20,8 +22,6 @@ export function mapScript(row: RawScript) {
   return { ...row, actif: toBool(row.actif) };
 }
 
-import type { Platform } from "../shared/types.js";
-
 interface RawLog {
   id: number;
   produit_id: number;
@@ -38,4 +38,11 @@ interface RawLog {
 
 export function mapLog(row: RawLog) {
   return { ...row, envoye: toBool(row.envoye), reponse: toBool(row.reponse), close: toBool(row.close) };
+}
+
+// Vrai uniquement pour une violation de contrainte UNIQUE SQLite (ex: nom en
+// double) — sert à ne pas afficher un message "existe déjà" trompeur pour
+// une tout autre erreur (disque plein, verrou DB...).
+export function isUniqueConstraintError(err: unknown): boolean {
+  return err instanceof Error && "code" in err && (err as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE";
 }

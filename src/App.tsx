@@ -9,6 +9,7 @@ import { Queue } from "@/components/Queue";
 import { ExportButton } from "@/components/ExportButton";
 import { BackupControls } from "@/components/BackupControls";
 import { DailyGoal } from "@/components/DailyGoal";
+import { errorMessage, useToast } from "@/components/Toast";
 import { useProducts } from "@/hooks/useProducts";
 import { useScripts } from "@/hooks/useScripts";
 import { useProspects } from "@/hooks/useProspects";
@@ -27,6 +28,7 @@ export default function App() {
   const [activeProductId, setActiveProductId] = useState<number | null>(null);
   const [view, setView] = useState<"normal" | "queue">("normal");
   const [section, setSection] = useState<Section>("prospects");
+  const { showError } = useToast();
 
   useEffect(() => {
     if (activeProductId == null && products.length > 0) {
@@ -53,6 +55,11 @@ export default function App() {
   } = useProspects(activeProductId);
   const { logs, removeLog, refresh: refreshLogs } = useLogs(activeProductId);
 
+  const aContacterCount = useMemo(
+    () => prospects.filter((p) => p.statut === "a_contacter").length,
+    [prospects]
+  );
+
   async function handleContact(prospectId: number, scriptId: number) {
     await contactProspect(prospectId, scriptId);
     await refreshLogs();
@@ -78,12 +85,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-base-950 text-base-100 flex flex-col">
-      <header className="border-b border-base-800 px-4 py-3 flex items-center justify-between gap-4">
+      <header className="border-b border-base-800 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
         <div>
           <h1 className="text-base font-bold tracking-tight">DM Prospection</h1>
-          <p className="text-xs text-base-500">Threads / Instagram / Twitter — préparation, pas d'envoi automatisé</p>
+          <p className="text-xs text-base-500 hidden sm:block">
+            Threads / Instagram / Twitter — préparation, pas d'envoi automatisé
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <ExportButton />
           <BackupControls />
         </div>
@@ -130,13 +139,22 @@ export default function App() {
                 <DailyGoal
                   product={activeProduct}
                   logs={logs}
-                  onSetGoal={(objectif) => updateProduct(activeProduct.id, { objectif_dm_jour: objectif })}
+                  onSetGoal={async (objectif) => {
+                    try {
+                      await updateProduct(activeProduct.id, { objectif_dm_jour: objectif });
+                    } catch (err) {
+                      showError(errorMessage(err, "Impossible de mettre à jour l'objectif."));
+                    }
+                  }}
                 />
                 <button
                   onClick={() => setView("queue")}
                   className="text-sm px-4 py-2 rounded-md bg-pos-500 hover:bg-pos-400 text-base-950 font-bold"
                 >
                   ▶ Lancer la file d'exécution
+                  {aContacterCount > 0 && (
+                    <span className="ml-1.5 text-xs font-normal opacity-80">({aContacterCount} à contacter)</span>
+                  )}
                 </button>
               </div>
             </div>
