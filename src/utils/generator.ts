@@ -17,6 +17,10 @@ import {
 // Le résultat est à relire avant envoi — c'est le principe même de l'app (rien n'est envoyé automatiquement).
 const TU_TO_VOUS: [string, string][] = [
   ["t'as", "vous avez"],
+  ["t'intéresse", "vous intéresse"],
+  ["t'en penses quoi", "vous en pensez quoi"],
+  ["dis-moi", "dites-moi"],
+  ["fais-moi", "faites-moi"],
   ["tu as", "vous avez"],
   ["tu es", "vous êtes"],
   ["tu peux", "vous pouvez"],
@@ -30,6 +34,9 @@ const TU_TO_VOUS: [string, string][] = [
   ["ta", "votre"],
   ["tes", "vos"],
   ["toi", "vous"],
+  // "te" (objet, ex: "ça te dit") avant le "tu" generique -- forme distincte,
+  // couvre les CTA/accroches figes de ce module (LOW_FRICTION_*, PROBLEM_LINK_OPENERS).
+  ["te", "vous"],
   ["tu", "vous"],
   ["salut", "bonjour"],
   ["yo", "bonjour"],
@@ -103,11 +110,6 @@ export function generateVariantsFromReference(reference: string): GeneratedVaria
     if (structure === "reference_activite") {
       base = prependProblemLinkedOpener(base, i);
     }
-    if (tone === "formel") {
-      base = applyReplacements(base, TU_TO_VOUS);
-    } else if (tone === "familier") {
-      base = applyReplacements(base, VOUS_TO_TU);
-    }
 
     // pas de formules IA génériques / flatterie / urgence / prix / jargon /
     // demandes à forte friction — fait avant l'équilibrage des pronoms, car
@@ -126,9 +128,21 @@ export function generateVariantsFromReference(reference: string): GeneratedVaria
     base = normalizeSingleCta(base, structure !== "affirmation_directe", i);
 
     // le prospect doit dominer sur l'émetteur — recentre si besoin (no-op
-    // sinon). Fait en dernier, CTA inclus, pour un comptage fiable.
+    // sinon). Fait avant le ton, CTA inclus, pour un comptage fiable.
     if (structure !== "reference_activite") {
       base = ensureProspectFirst(base, i);
+    }
+
+    // Le ton (formel/familier) s'applique en tout dernier, sur le texte
+    // complet (accroche + CTA inclus) : les accroches de PROBLEM_LINK_OPENERS
+    // et les CTA de LOW_FRICTION_QUESTIONS/STATEMENTS sont écrits en dur au
+    // tutoiement. Appliqué plus tôt, le swap tu/vous les laisserait de côté
+    // (ajoutés après lui) et une variante "formel" finirait par "Ça te dit ?"
+    // au lieu de "Ça vous dit ?" — un message vouvoyé qui se termine tutoyé.
+    if (tone === "formel") {
+      base = applyReplacements(base, TU_TO_VOUS);
+    } else if (tone === "familier") {
+      base = applyReplacements(base, VOUS_TO_TU);
     }
 
     return { texte: base, structure, longueur, tone };
