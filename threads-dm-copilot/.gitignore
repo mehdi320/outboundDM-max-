@@ -1,0 +1,20 @@
+# Session Threads (cookies) — jamais commit
+cookies/*.json
+
+# CSV de prospects réels — jamais commit
+data/*.csv
+!data/prospects.example.csv
+
+# Logs d'exécution (contiennent des noms/URLs de prospects)
+logs/*.csv
+
+# Dépendances
+node_modules/
+
+# Divers
+.DS_Store
+*.log
+
+# Garder les dossiers vides trackés
+!cookies/.gitkeep
+!logs/.gitkeep

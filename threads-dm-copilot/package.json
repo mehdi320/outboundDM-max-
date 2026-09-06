@@ -1,0 +1,16 @@
+{
+  "name": "threads-dm-copilot",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Copilote d'envoi manuel pour prospection Threads (aucun envoi automatisé)",
+  "type": "commonjs",
+  "scripts": {
+    "postinstall": "playwright install chromium",
+    "save-session": "node scripts/save-session.js",
+    "start": "node src/run.js"
+  },
+  "dependencies": {
+    "csv-parse": "^5.6.0",
+    "playwright": "^1.48.0"
+  }
+}
