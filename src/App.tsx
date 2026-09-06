@@ -126,7 +126,7 @@ export default function App() {
                     onClick={() => setSection(s)}
                     className={`text-sm px-3 py-1.5 rounded font-medium capitalize transition-colors ${
                       section === s
-                        ? "bg-amber-600 text-base-950"
+                        ? "bg-accent-600 text-base-950"
                         : "text-base-300 hover:text-base-100 hover:bg-base-800"
                     }`}
                   >

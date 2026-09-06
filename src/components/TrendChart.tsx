@@ -6,7 +6,7 @@ interface Props {
   logs: Log[];
 }
 
-const COLORS = ["#f59e0b", "#22d3ee", "#34d399", "#f87171", "#a78bfa", "#fb923c", "#e879f9"];
+const COLORS = ["#6366f1", "#22d3ee", "#34d399", "#f87171", "#a78bfa", "#fb923c", "#e879f9"];
 
 function isoWeekKey(dateStr: string): { key: string; sortValue: number } {
   const d = new Date(dateStr + "T00:00:00Z");

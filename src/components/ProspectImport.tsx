@@ -42,7 +42,7 @@ export function ProspectImport({ onImport }: Props) {
   if (!open) {
     return (
       <button
-        className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-amber-400 hover:border-amber-500 transition-colors"
+        className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-accent-400 hover:border-accent-500 transition-colors"
         onClick={() => setOpen(true)}
       >
         ⬆ Importer CSV
@@ -67,13 +67,13 @@ export function ProspectImport({ onImport }: Props) {
       </div>
 
       <p className="text-xs text-base-500">
-        Colonnes attendues : <code className="text-amber-400">pseudo</code>,{" "}
-        <code className="text-amber-400">plateforme</code> (Instagram/Threads/Twitter),{" "}
-        <code className="text-amber-400">detail</code> (optionnel). Ligne d'en-tête recommandée.
+        Colonnes attendues : <code className="text-accent-400">pseudo</code>,{" "}
+        <code className="text-accent-400">plateforme</code> (Instagram/Threads/Twitter),{" "}
+        <code className="text-accent-400">detail</code> (optionnel). Ligne d'en-tête recommandée.
       </p>
 
       <button
-        className="text-xs px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold"
+        className="text-xs px-3 py-1.5 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold"
         onClick={() => fileInputRef.current?.click()}
       >
         Choisir un fichier .csv

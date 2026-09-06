@@ -7,6 +7,6 @@
     @apply antialiased;
   }
   ::selection {
-    @apply bg-amber-500/30;
+    @apply bg-accent-500/30;
   }
 }

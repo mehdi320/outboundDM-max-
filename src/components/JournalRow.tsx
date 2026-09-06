@@ -72,7 +72,7 @@ export function JournalRow({ log, scriptLabel, prospectPseudo, onToggle, onDelet
           active={log.reponse}
           onClick={() => handleToggle("reponse", !log.reponse)}
           label="Réponse"
-          activeClass="bg-amber-500 text-base-950"
+          activeClass="bg-accent-500 text-base-950"
         />
       </td>
       <td className="px-3 py-2 text-center">

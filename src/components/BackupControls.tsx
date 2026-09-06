@@ -48,13 +48,13 @@ export function BackupControls() {
       <a
         href={api.backup.exportJsonUrl()}
         download
-        className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-amber-400 hover:border-amber-500 transition-colors"
+        className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-accent-400 hover:border-accent-500 transition-colors"
         title="Télécharger une sauvegarde complète (produits, scripts, prospects, logs)"
       >
         ⬇ Sauvegarde JSON
       </a>
       <button
-        className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-amber-400 hover:border-amber-500 transition-colors disabled:opacity-40"
+        className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-accent-400 hover:border-accent-500 transition-colors disabled:opacity-40"
         onClick={() => fileInputRef.current?.click()}
         disabled={importing}
         title="Restaurer depuis un fichier de sauvegarde JSON (remplace toutes les données)"

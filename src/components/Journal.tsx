@@ -89,7 +89,7 @@ export function Journal({ logs, scripts, prospects, onDelete, onRefresh }: Props
           Journal ({filtered.length}/{logs.length})
         </h2>
         <input
-          className="bg-base-900 border border-base-600 rounded px-2 py-1 text-sm w-56 focus:outline-none focus:border-amber-500"
+          className="bg-base-900 border border-base-600 rounded px-2 py-1 text-sm w-56 focus:outline-none focus:border-accent-500"
           placeholder="Rechercher (prospect, script, note)..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}

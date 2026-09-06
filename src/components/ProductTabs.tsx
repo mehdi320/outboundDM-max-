@@ -45,7 +45,7 @@ export function ProductTabs({ products, activeId, onSelect, onCreate, onDelete }
             key={p.id}
             className={`group flex items-center gap-1.5 rounded-t-md px-3 py-2 text-sm font-medium cursor-pointer transition-colors ${
               active
-                ? "bg-base-850 text-amber-400 border-x border-t border-base-700"
+                ? "bg-base-850 text-accent-400 border-x border-t border-base-700"
                 : "text-base-300 hover:text-base-100 hover:bg-base-900"
             }`}
             onClick={() => onSelect(p.id)}
@@ -69,7 +69,7 @@ export function ProductTabs({ products, activeId, onSelect, onCreate, onDelete }
         <div className="flex items-center gap-1 pb-2">
           <input
             autoFocus
-            className="bg-base-900 border border-base-600 rounded px-2 py-1 text-sm w-40 focus:outline-none focus:border-amber-500"
+            className="bg-base-900 border border-base-600 rounded px-2 py-1 text-sm w-40 focus:outline-none focus:border-accent-500"
             placeholder="Nom du produit"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -79,7 +79,7 @@ export function ProductTabs({ products, activeId, onSelect, onCreate, onDelete }
             }}
           />
           <button
-            className="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold"
+            className="text-xs px-2 py-1 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold"
             onClick={handleCreate}
           >
             OK
@@ -87,7 +87,7 @@ export function ProductTabs({ products, activeId, onSelect, onCreate, onDelete }
         </div>
       ) : (
         <button
-          className="text-base-400 hover:text-amber-400 text-sm px-2 pb-2"
+          className="text-base-400 hover:text-accent-400 text-sm px-2 pb-2"
           onClick={() => setAdding(true)}
         >
           + Produit

@@ -73,9 +73,9 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
       </div>
 
       <p className="text-xs text-base-500 mb-3">
-        Variables disponibles dans le texte : <code className="text-amber-400">{"{prenom}"}</code>,{" "}
-        <code className="text-amber-400">{"{detail}"}</code>,{" "}
-        <code className="text-amber-400">{"{produit}"}</code>
+        Variables disponibles dans le texte : <code className="text-accent-400">{"{prenom}"}</code>,{" "}
+        <code className="text-accent-400">{"{detail}"}</code>,{" "}
+        <code className="text-accent-400">{"{produit}"}</code>
       </p>
 
       <div className="space-y-2 mb-4">
@@ -96,14 +96,14 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
                 />
                 <button
                   type="button"
-                  className="text-sm font-medium text-base-100 hover:text-amber-400 text-left truncate"
+                  className="text-sm font-medium text-base-100 hover:text-accent-400 text-left truncate"
                   onClick={() => setExpanded(expanded === s.id ? null : s.id)}
                 >
                   {s.label}
                 </button>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button className="text-xs text-base-400 hover:text-amber-400" onClick={() => startEdit(s)}>
+                <button className="text-xs text-base-400 hover:text-accent-400" onClick={() => startEdit(s)}>
                   Éditer
                 </button>
                 <button
@@ -136,7 +136,7 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
                 />
                 <div className="flex gap-2">
                   <button
-                    className="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold"
+                    className="text-xs px-2 py-1 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold"
                     onClick={() => saveEdit(s.id)}
                   >
                     Sauver
@@ -156,20 +156,20 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
 
       <div className="border-t border-base-700 pt-3 space-y-2">
         <input
-          className="w-full bg-base-900 border border-base-600 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500"
+          className="w-full bg-base-900 border border-base-600 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-accent-500"
           placeholder="Label (ex: Script A)"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
         />
         <textarea
-          className="w-full bg-base-900 border border-base-600 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500 resize-y"
+          className="w-full bg-base-900 border border-base-600 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-accent-500 resize-y"
           placeholder="Texte du message, ex: Salut {prenom} ! {detail}..."
           rows={3}
           value={contenu}
           onChange={(e) => setContenu(e.target.value)}
         />
         <button
-          className="w-full text-sm px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold disabled:opacity-40"
+          className="w-full text-sm px-3 py-1.5 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold disabled:opacity-40"
           disabled={!label.trim()}
           onClick={handleCreate}
         >

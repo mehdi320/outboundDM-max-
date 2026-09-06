@@ -13,14 +13,14 @@ export function ScriptCard({ metrics, isBest }: Props) {
     <div
       className={`rounded-lg border p-4 space-y-3 ${
         isBest
-          ? "border-amber-500 bg-amber-500/5 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+          ? "border-accent-500 bg-accent-500/5 shadow-[0_0_0_1px_rgba(99,102,241,0.3)]"
           : "border-base-700 bg-base-850"
       }`}
     >
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-base-100">{script.label}</h3>
         {isBest && (
-          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-400 bg-amber-500/10 border border-amber-500/40 rounded px-1.5 py-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-accent-400 bg-accent-500/10 border border-accent-500/40 rounded px-1.5 py-0.5">
             🏆 Meilleur
           </span>
         )}

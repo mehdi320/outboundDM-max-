@@ -147,7 +147,7 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
                 onClick={() => setPlateforme(p)}
                 className={`text-xs px-3 py-1.5 rounded font-medium transition-colors ${
                   plateforme === p
-                    ? "bg-amber-600 text-base-950"
+                    ? "bg-accent-600 text-base-950"
                     : "text-base-300 hover:text-base-100 hover:bg-base-800"
                 }`}
               >
@@ -180,7 +180,7 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
               <div className="text-xs uppercase tracking-widest text-base-500 mb-1">
                 {current.prospect.plateforme} · {current.script.label}
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-amber-400 break-words">
+              <h1 className="text-4xl sm:text-5xl font-bold text-accent-400 break-words">
                 {current.prospect.pseudo}
               </h1>
               {current.prospect.detail_personnalisation && (
@@ -201,7 +201,7 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
               className={`w-full text-lg font-semibold py-4 rounded-lg transition-colors ${
                 copied
                   ? "bg-pos-500 text-base-950"
-                  : "bg-amber-600 hover:bg-amber-500 text-base-950"
+                  : "bg-accent-600 hover:bg-accent-500 text-base-950"
               }`}
             >
               {copied ? "✓ Copié !" : "📋 Copier le message"} <span className="text-sm font-normal opacity-60">(C)</span>
@@ -254,7 +254,7 @@ function EmptyState({
       {onReload && (
         <button
           onClick={onReload}
-          className="text-sm px-4 py-2 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold"
+          className="text-sm px-4 py-2 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold"
         >
           Recharger la file
         </button>

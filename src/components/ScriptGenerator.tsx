@@ -20,7 +20,7 @@ function LintBadges({ text }: { text: string }) {
   return (
     <ul className="space-y-0.5">
       {issues.map((issue, i) => (
-        <li key={`${issue.code}-${i}`} className="text-xs text-amber-400 flex items-start gap-1">
+        <li key={`${issue.code}-${i}`} className="text-xs text-accent-400 flex items-start gap-1">
           <span>⚠</span>
           <span>{issue.message}</span>
         </li>
@@ -79,16 +79,16 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
         Générateur de variantes A/B
       </h2>
       <p className="text-xs text-base-500 mb-3">
-        Colle ton message habituel : il devient <span className="text-amber-400">Script A</span>, et l'app
+        Colle ton message habituel : il devient <span className="text-accent-400">Script A</span>, et l'app
         génère des variantes qui gardent le même fond mais changent la forme (longueur, structure — le ton
         formel/familier ne varie jamais seul). Les variantes appliquent automatiquement les bonnes pratiques
         cold outreach (prospect avant l'outil, un seul CTA à faible friction, pas de jargon/flatterie/urgence/
         prix ni de formules IA génériques) — relis quand même avant d'envoyer, surtout pour vérifier que{" "}
-        <code className="text-amber-400">{"{detail}"}</code> est bien connecté au problème du prospect.
+        <code className="text-accent-400">{"{detail}"}</code> est bien connecté au problème du prospect.
       </p>
 
       <textarea
-        className="w-full bg-base-900 border border-base-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 resize-y"
+        className="w-full bg-base-900 border border-base-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-accent-500 resize-y"
         rows={4}
         placeholder="Salut {prenom} ! J'ai vu {detail}, ça m'a fait penser à toi. Tu es ouvert(e) à en discuter ?"
         value={reference}
@@ -100,7 +100,7 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
 
       <div className="flex items-center gap-3 mt-2 mb-4">
         <button
-          className="text-sm px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold disabled:opacity-40"
+          className="text-sm px-3 py-1.5 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold disabled:opacity-40"
           disabled={!reference.trim() || savingA}
           onClick={handleGenerate}
         >
@@ -123,7 +123,7 @@ export function ScriptGenerator({ onSaveAsScript }: Props) {
             return (
               <div key={i} className="border border-base-700 rounded-md p-3 flex flex-col gap-2">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-base-500">
-                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold">
+                  <span className="px-1.5 py-0.5 rounded bg-accent-500/10 text-accent-400 font-bold">
                     Script {letter}
                   </span>
                   <span className="px-1.5 py-0.5 rounded bg-base-800">{STRUCTURE_LABELS[v.structure]}</span>

@@ -44,7 +44,7 @@ export function DailyGoal({ product, logs, onSetGoal }: Props) {
           }}
         />
         <button
-          className="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold"
+          className="text-xs px-2 py-1 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold"
           onClick={save}
         >
           OK
@@ -62,7 +62,7 @@ export function DailyGoal({ product, logs, onSetGoal }: Props) {
   if (objectif == null) {
     return (
       <button
-        className="text-xs text-base-400 hover:text-amber-400 bg-base-900 border border-base-700 hover:border-amber-500 rounded-md px-3 py-2 transition-colors"
+        className="text-xs text-base-400 hover:text-accent-400 bg-base-900 border border-base-700 hover:border-accent-500 rounded-md px-3 py-2 transition-colors"
         onClick={() => setEditing(true)}
       >
         + Fixer un objectif quotidien
@@ -82,7 +82,7 @@ export function DailyGoal({ product, logs, onSetGoal }: Props) {
       <span className="text-xs text-base-400 whitespace-nowrap">Objectif du jour</span>
       <div className="w-32 h-2 rounded-full bg-base-800 overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${atteint ? "bg-pos-500" : "bg-amber-500"}`}
+          className={`h-full rounded-full transition-all ${atteint ? "bg-pos-500" : "bg-accent-500"}`}
           style={{ width: `${pct}%` }}
         />
       </div>

@@ -17,7 +17,7 @@ interface Props {
 const STATUT_COLORS: Record<Statut, string> = {
   a_contacter: "text-base-300",
   contacte: "text-pos-cyan",
-  repondu: "text-amber-400",
+  repondu: "text-accent-400",
   close: "text-pos-400",
   ignore: "text-base-600",
 };
@@ -130,7 +130,7 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
           </select>
           <ProspectImport onImport={bulkImport} />
           <button
-            className="text-xs px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold"
+            className="text-xs px-3 py-1.5 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold"
             onClick={() => setShowAddForm((v) => !v)}
           >
             + Prospect
@@ -190,7 +190,7 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
             />
           </label>
           <button
-            className="text-sm px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold disabled:opacity-40"
+            className="text-sm px-3 py-1.5 rounded bg-accent-600 hover:bg-accent-500 text-base-950 font-semibold disabled:opacity-40"
             disabled={!pseudo.trim()}
             onClick={handleAdd}
           >
