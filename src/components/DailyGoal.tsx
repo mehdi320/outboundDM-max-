@@ -1,3 +1,4 @@
+import { localToday } from "@/utils/date";
 import { useState } from "react";
 import type { Log, Product } from "@shared/types";
 
@@ -7,9 +8,7 @@ interface Props {
   onSetGoal: (objectif: number | null) => Promise<unknown>;
 }
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+const today = localToday;
 
 export function DailyGoal({ product, logs, onSetGoal }: Props) {
   const [editing, setEditing] = useState(false);

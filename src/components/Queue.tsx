@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Log, Platform, Product, Prospect, Script } from "@shared/types";
 import { PLATFORMS } from "@shared/types";
-import { renderTemplate } from "@/utils/template";
+import { renderTemplateDetailed } from "@/utils/template";
+import { localToday } from "@/utils/date";
 import { errorMessage, useToast } from "@/components/Toast";
 
 interface Props {
@@ -19,30 +20,56 @@ interface QueueItem {
   script: Script;
 }
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+const today = localToday;
 
-function buildQueue(prospects: Prospect[], plateforme: Platform, scriptsActifs: Script[]): QueueItem[] {
+// Rotation équilibrée sur l'historique : chaque prospect reçoit le script actif
+// le moins envoyé jusqu'ici sur cette plateforme. Une rotation qui repart de A à
+// chaque session sur-représente A dès qu'on s'arrête sur un nombre impair.
+function buildQueue(
+  prospects: Prospect[],
+  plateforme: Platform,
+  scriptsActifs: Script[],
+  logs: Log[]
+): QueueItem[] {
+  if (scriptsActifs.length === 0) return [];
   const aContacter = prospects
     .filter((p) => p.plateforme === plateforme && p.statut === "a_contacter")
-    .sort((a, b) => a.date_ajout.localeCompare(b.date_ajout));
-  if (scriptsActifs.length === 0) return [];
-  return aContacter.map((prospect, i) => ({ prospect, script: scriptsActifs[i % scriptsActifs.length] }));
+    .sort((a, b) => a.date_ajout.localeCompare(b.date_ajout) || a.id - b.id);
+
+  const counts = new Map<number, number>(scriptsActifs.map((s) => [s.id, 0]));
+  for (const l of logs) {
+    if (l.envoye && l.plateforme === plateforme && counts.has(l.script_id)) {
+      counts.set(l.script_id, counts.get(l.script_id)! + 1);
+    }
+  }
+
+  return aContacter.map((prospect) => {
+    let script = scriptsActifs[0];
+    for (const s of scriptsActifs) if (counts.get(s.id)! < counts.get(script.id)!) script = s;
+    counts.set(script.id, counts.get(script.id)! + 1);
+    return { prospect, script };
+  });
 }
 
+const VAR_LABELS = { prenom: "prénom", detail: "détail de personnalisation" } as const;
+
 export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, onExit }: Props) {
-  const [plateforme, setPlateforme] = useState<Platform>("Threads");
+  // ouvre la file sur la plateforme qui a le plus de prospects à contacter
+  const [plateforme, setPlateforme] = useState<Platform>(() => {
+    const count = (pl: Platform) => prospects.filter((p) => p.plateforme === pl && p.statut === "a_contacter").length;
+    return [...PLATFORMS].sort((a, b) => count(b) - count(a))[0];
+  });
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [cursor, setCursor] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const { showError } = useToast();
 
   const scriptsActifs = useMemo(() => scripts.filter((s) => s.actif), [scripts]);
 
   function reload() {
-    setQueue(buildQueue(prospects, plateforme, scriptsActifs));
+    setQueue(buildQueue(prospects, plateforme, scriptsActifs, logs));
     setCursor(0);
     setCopied(false);
   }
@@ -51,9 +78,17 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
   useEffect(reload, [product.id, plateforme]);
 
   const current = queue[cursor];
-  const message = current
-    ? renderTemplate(current.script.contenu ?? "", current.prospect, product.nom)
-    : "";
+  const rendered = current
+    ? renderTemplateDetailed(current.script.contenu ?? "", current.prospect, product.nom)
+    : null;
+
+  // le message reste modifiable avant copie (ex: compléter un détail manquant)
+  useEffect(() => {
+    setDraft(rendered?.texte ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.prospect.id, current?.script.id]);
+
+  const message = draft;
 
   const envoyesAujourdhui = logs.filter((l) => l.date === today() && l.envoye).length;
 
@@ -190,10 +225,26 @@ export function Queue({ product, scripts, prospects, logs, onContact, onIgnore, 
               )}
             </div>
 
-            <div className="bg-base-850 border border-base-700 rounded-lg p-5">
-              <p className="text-lg sm:text-xl leading-relaxed text-base-100 whitespace-pre-wrap">
-                {message || <span className="italic text-base-500">Ce script n'a pas de texte.</span>}
-              </p>
+            {rendered && rendered.manquantes.length > 0 && (
+              <div className="bg-amber-500/10 border border-amber-600/50 rounded-md px-4 py-2 text-sm text-amber-300">
+                ⚠ Ce script utilise {rendered.manquantes.map((v) => `{${v}}`).join(" et ")} mais ce prospect n'a pas de{" "}
+                {rendered.manquantes.map((v) => VAR_LABELS[v]).join(" ni de ")} : la variable a été retirée. Relis la
+                phrase (tu peux la corriger directement ci-dessous) avant de copier.
+              </div>
+            )}
+
+            <div className="bg-base-850 border border-base-700 rounded-lg p-1">
+              {current.script.contenu ? (
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  rows={Math.min(12, Math.max(4, draft.split("\n").length + 2))}
+                  className="w-full bg-transparent p-4 text-lg sm:text-xl leading-relaxed text-base-100 resize-y focus:outline-none"
+                />
+              ) : (
+                <p className="p-4 italic text-base-500">Ce script n'a pas de texte.</p>
+              )}
             </div>
 
             <button

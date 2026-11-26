@@ -75,7 +75,8 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
       <p className="text-xs text-base-500 mb-3">
         Variables disponibles dans le texte : <code className="text-amber-400">{"{prenom}"}</code>,{" "}
         <code className="text-amber-400">{"{detail}"}</code>,{" "}
-        <code className="text-amber-400">{"{produit}"}</code>
+        <code className="text-amber-400">{"{produit}"}</code>. Si un prospect n'a pas de prénom ou de détail, la
+        variable est retirée proprement et la file te le signale avant copie.
       </p>
 
       <div className="space-y-2 mb-4">

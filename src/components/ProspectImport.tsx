@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import type { NewProspect } from "@shared/types";
+import type { NewProspect, Platform } from "@shared/types";
+import { PLATFORMS } from "@shared/types";
 import { parseProspectsCsv } from "@/utils/csv";
 
 interface Props {
@@ -14,15 +15,21 @@ export function ProspectImport({ onImport }: Props) {
   );
   const [result, setResult] = useState<{ inserted: number; ignored: number } | null>(null);
   const [importing, setImporting] = useState(false);
+  const [defaultPlatform, setDefaultPlatform] = useState<Platform | "">("");
+  const [rawText, setRawText] = useState<string | null>(null);
+
+  function reparse(text: string, platform: Platform | "") {
+    setPreview(parseProspectsCsv(text, platform || null));
+    setResult(null);
+  }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
     const text = await file.text();
-    const parsed = parseProspectsCsv(text);
-    setPreview(parsed);
-    setResult(null);
+    setRawText(text);
+    reparse(text, defaultPlatform);
   }
 
   async function confirmImport() {
@@ -60,6 +67,7 @@ export function ProspectImport({ onImport }: Props) {
             setOpen(false);
             setPreview(null);
             setResult(null);
+            setRawText(null);
           }}
         >
           Fermer
@@ -67,10 +75,31 @@ export function ProspectImport({ onImport }: Props) {
       </div>
 
       <p className="text-xs text-base-500">
-        Colonnes attendues : <code className="text-amber-400">pseudo</code>,{" "}
-        <code className="text-amber-400">plateforme</code> (Instagram/Threads/Twitter),{" "}
-        <code className="text-amber-400">detail</code> (optionnel). Ligne d'en-tête recommandée.
+        Colonnes : <code className="text-amber-400">pseudo</code> (ou <code className="text-amber-400">lien</code> vers
+        le profil), <code className="text-amber-400">plateforme</code> (Instagram/Threads/Twitter),{" "}
+        <code className="text-amber-400">prenom</code> et <code className="text-amber-400">detail</code> (optionnels).
+        Séparateur virgule ou point-virgule (export Excel/Sheets FR) détecté automatiquement.
       </p>
+
+      <label className="text-xs text-base-400 flex items-center gap-2">
+        Plateforme si la colonne est absente/vide :
+        <select
+          className="bg-base-900 border border-base-600 rounded px-2 py-1 text-xs text-base-200"
+          value={defaultPlatform}
+          onChange={(e) => {
+            const v = e.target.value as Platform | "";
+            setDefaultPlatform(v);
+            if (rawText) reparse(rawText, v);
+          }}
+        >
+          <option value="">Aucune (ligne ignorée)</option>
+          {PLATFORMS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <button
         className="text-xs px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-base-950 font-semibold"
@@ -91,7 +120,8 @@ export function ProspectImport({ onImport }: Props) {
           <div className="max-h-40 overflow-y-auto text-xs text-base-400 space-y-0.5">
             {preview.prospects.slice(0, 8).map((p, i) => (
               <div key={i}>
-                {p.pseudo} · {p.plateforme} {p.detail_personnalisation ? `· ${p.detail_personnalisation}` : ""}
+                {p.pseudo} {p.prenom ? `(${p.prenom})` : ""} · {p.plateforme}{" "}
+                {p.detail_personnalisation ? `· ${p.detail_personnalisation}` : ""}
               </div>
             ))}
             {preview.prospects.length > 8 && <div>… et {preview.prospects.length - 8} de plus</div>}

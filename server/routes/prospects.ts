@@ -53,9 +53,15 @@ prospectsRouter.post("/", (req, res) => {
   try {
     const result = db
       .prepare(
-        "INSERT INTO prospects (produit_id, pseudo, plateforme, detail_personnalisation) VALUES (?, ?, ?, ?)"
+        "INSERT INTO prospects (produit_id, pseudo, prenom, plateforme, detail_personnalisation) VALUES (?, ?, ?, ?, ?)"
       )
-      .run(body.produit_id, body.pseudo.trim(), body.plateforme, body.detail_personnalisation ?? null);
+      .run(
+        body.produit_id,
+        body.pseudo.trim().replace(/^@/, ""),
+        body.prenom?.trim() || null,
+        body.plateforme,
+        body.detail_personnalisation ?? null
+      );
     const prospect = db.prepare("SELECT * FROM prospects WHERE id = ?").get(result.lastInsertRowid);
     res.status(201).json(prospect);
   } catch (err) {
@@ -68,6 +74,7 @@ prospectsRouter.post("/", (req, res) => {
 
 interface BulkProspect {
   pseudo: string;
+  prenom?: string | null;
   plateforme: Platform;
   detail_personnalisation: string | null;
 }
@@ -79,14 +86,21 @@ prospectsRouter.post("/bulk", (req, res) => {
   }
 
   const insert = db.prepare(
-    "INSERT OR IGNORE INTO prospects (produit_id, pseudo, plateforme, detail_personnalisation) VALUES (?, ?, ?, ?)"
+    "INSERT OR IGNORE INTO prospects (produit_id, pseudo, prenom, plateforme, detail_personnalisation) VALUES (?, ?, ?, ?, ?)"
   );
 
   const run = db.transaction((rows: BulkProspect[]) => {
     let inserted = 0;
     for (const row of rows) {
-      if (!row.pseudo?.trim() || !VALID_PLATFORMS.includes(row.plateforme)) continue;
-      const result = insert.run(produit_id, row.pseudo.trim(), row.plateforme, row.detail_personnalisation ?? null);
+      const pseudo = row.pseudo?.trim().replace(/^@/, "");
+      if (!pseudo || !VALID_PLATFORMS.includes(row.plateforme)) continue;
+      const result = insert.run(
+        produit_id,
+        pseudo,
+        row.prenom?.trim() || null,
+        row.plateforme,
+        row.detail_personnalisation ?? null
+      );
       if (result.changes > 0) inserted++;
     }
     return inserted;
@@ -111,6 +125,7 @@ prospectsRouter.put("/:id", (req, res) => {
 
   const merged = {
     pseudo: body.pseudo !== undefined ? body.pseudo.trim() : existing.pseudo,
+    prenom: body.prenom !== undefined ? body.prenom?.trim() || null : existing.prenom,
     plateforme: body.plateforme ?? existing.plateforme,
     detail_personnalisation:
       body.detail_personnalisation !== undefined ? body.detail_personnalisation : existing.detail_personnalisation,
@@ -119,8 +134,8 @@ prospectsRouter.put("/:id", (req, res) => {
 
   const update = db.transaction(() => {
     db.prepare(
-      "UPDATE prospects SET pseudo = ?, plateforme = ?, detail_personnalisation = ?, statut = ? WHERE id = ?"
-    ).run(merged.pseudo, merged.plateforme, merged.detail_personnalisation, merged.statut, id);
+      "UPDATE prospects SET pseudo = ?, prenom = ?, plateforme = ?, detail_personnalisation = ?, statut = ? WHERE id = ?"
+    ).run(merged.pseudo, merged.prenom, merged.plateforme, merged.detail_personnalisation, merged.statut, id);
 
     if (body.statut !== undefined) {
       const flags = STATUT_LOG_FLAGS[body.statut];

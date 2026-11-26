@@ -27,7 +27,7 @@ Les données sont stockées dans `data/dm-tracker.sqlite3` (créé automatiqueme
 
 - **Produit** : `id`, `nom`, `objectif_dm_jour` (optionnel)
 - **Script** : `id`, `produit_id`, `label`, `contenu` (variables `{prenom}`, `{detail}`, `{produit}`), `actif`
-- **Prospect** : `id`, `produit_id`, `pseudo`, `plateforme`, `detail_personnalisation`, `statut`
+- **Prospect** : `id`, `produit_id`, `pseudo`, `prenom` (optionnel, remplit `{prenom}`), `plateforme`, `detail_personnalisation`, `statut`
   (`a_contacter` / `contacte` / `repondu` / `close` / `ignore`), `date_ajout`
 - **Log** : `id`, `produit_id`, `script_id`, `prospect_id`, `plateforme`, `date`,
   `envoye`/`reponse`/`close` (booléens), `note`
@@ -66,7 +66,7 @@ Les données sont stockées dans `data/dm-tracker.sqlite3` (créé automatiqueme
 - **Prospects** : ajout manuel (avec **auto-détection depuis un lien de profil** collé —
   `threads.net/@pseudo`, `instagram.com/pseudo`, `x.com/pseudo` remplissent pseudo +
   plateforme automatiquement, par simple analyse de l'URL, aucune requête réseau) ou
-  **import CSV en masse** (colonnes `pseudo`, `plateforme`, `detail`), filtrable par
+  **import CSV en masse** (colonnes `pseudo` ou `lien`, `plateforme`, `prenom`, `detail` ; séparateur `,` ou `;` détecté automatiquement, BOM Excel géré, plateforme par défaut sélectionnable si la colonne est absente), filtrable par
   plateforme/statut, changement de statut en ligne, dédoublonnage automatique. Le champ
   `detail` (personnalisation) reste volontairement manuel : le récupérer automatiquement
   demanderait de scraper les pages profil (requête réseau, zone grise côté CGU, pages en
@@ -74,8 +74,8 @@ Les données sont stockées dans `data/dm-tracker.sqlite3` (créé automatiqueme
   générateur (`{detail}` doit être une vraie observation humaine connectée au problème,
   pas une donnée aspirée).
 - **File d'exécution** (le cœur de l'app) : choisis produit + plateforme, l'app assigne
-  chaque prospect "à contacter" à un script en rotation équilibrée (A/B/C/A/B/C...), affiche
-  le message avec les variables déjà remplies, un prospect à la fois en plein écran. Bouton
+  chaque prospect "à contacter" au script actif le moins envoyé jusqu'ici sur cette plateforme (rotation équilibrée sur tout l'historique, pas seulement la session), affiche
+  le message avec les variables déjà remplies (modifiable avant copie ; alerte si `{prenom}`/`{detail}` est vide pour ce prospect), un prospect à la fois en plein écran. Bouton
   "Copier le message" → colle dans Threads → "Suivant" (marque contacté + log
   automatiquement). "Passer" pour sauter sans marquer, "Ignorer définitivement" pour exclure.
   Compteur de session visible.

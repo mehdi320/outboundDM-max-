@@ -34,6 +34,7 @@ export interface Prospect {
   id: number;
   produit_id: number;
   pseudo: string;
+  prenom: string | null;
   plateforme: Platform;
   detail_personnalisation: string | null;
   statut: Statut;
@@ -61,8 +62,12 @@ export type UpdateProduct = Partial<Pick<Product, "nom" | "objectif_dm_jour">>;
 export type NewScript = Pick<Script, "produit_id" | "label" | "contenu">;
 export type UpdateScript = Partial<Pick<Script, "label" | "contenu" | "actif">>;
 
-export type NewProspect = Pick<Prospect, "produit_id" | "pseudo" | "plateforme" | "detail_personnalisation">;
-export type UpdateProspect = Partial<Pick<Prospect, "pseudo" | "plateforme" | "detail_personnalisation" | "statut">>;
+export type NewProspect = Pick<Prospect, "produit_id" | "pseudo" | "plateforme" | "detail_personnalisation"> & {
+  prenom?: string | null;
+};
+export type UpdateProspect = Partial<
+  Pick<Prospect, "pseudo" | "prenom" | "plateforme" | "detail_personnalisation" | "statut">
+>;
 
 export type NewLog = Omit<Log, "id" | "created_at">;
 export type UpdateLog = Partial<NewLog>;
