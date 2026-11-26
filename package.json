@@ -9,7 +9,9 @@
     "dev:client": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "build:artifact": "tsc -b && vite build --mode artifact --outDir dist-artifact --emptyOutDir && node scripts/inline-artifact.mjs",
+    "start": "concurrently -n server,client -c yellow,cyan \"npm:dev:server\" \"vite --open\""
   },
   "dependencies": {
     "better-sqlite3": "^11.9.1",

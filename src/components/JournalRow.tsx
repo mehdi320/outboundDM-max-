@@ -1,3 +1,4 @@
+import { askConfirm } from "@/components/ConfirmDialog";
 import type { Log } from "@shared/types";
 import { errorMessage, useToast } from "@/components/Toast";
 
@@ -37,7 +38,7 @@ export function JournalRow({ log, scriptLabel, prospectPseudo, onToggle, onDelet
   const { showError } = useToast();
 
   async function handleDelete() {
-    if (!confirm("Supprimer ce log ?")) return;
+    if (!(await askConfirm("Supprimer ce log ?"))) return;
     try {
       await onDelete(log.id);
     } catch (err) {

@@ -1,3 +1,4 @@
+import { askConfirm } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import type { Script, UpdateScript } from "@shared/types";
 import { errorMessage, useToast } from "@/components/Toast";
@@ -31,7 +32,7 @@ export function ScriptManager({ scripts, onCreate, onUpdate, onDelete }: Props) 
   }
 
   async function handleDelete(id: number, scriptLabel: string) {
-    if (!confirm(`Supprimer le script "${scriptLabel}" et ses logs associés ?`)) return;
+    if (!(await askConfirm(`Supprimer le script "${scriptLabel}" et ses logs associés ?`))) return;
     try {
       await onDelete(id);
     } catch (err) {

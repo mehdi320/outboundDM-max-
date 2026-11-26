@@ -1,3 +1,5 @@
+import { createMemoryBackend } from "@/api/memoryBackend";
+import { createArtifactPersistence } from "@/api/artifactPersistence";
 import type {
   Product,
   NewProduct,
@@ -30,7 +32,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export const api = {
+const serverApi = {
   products: {
     list: () => request<Product[]>("/api/products"),
     create: (data: NewProduct) =>
@@ -87,9 +89,13 @@ export const api = {
       request<Log>(`/api/logs/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     remove: (id: number) => request<void>(`/api/logs/${id}`, { method: "DELETE" }),
   },
-  exportCsvUrl: () => "/api/export/csv",
+  exportCsv: async () => {
+    const res = await fetch("/api/export/csv");
+    if (!res.ok) throw new Error(`Erreur ${res.status}`);
+    return res.text();
+  },
   backup: {
-    exportJsonUrl: () => "/api/backup/json",
+    exportJson: () => request<BackupPayload>("/api/backup/json"),
     importJson: (payload: BackupPayload) =>
       request<{ ok: true; products: number; scripts: number; prospects: number; logs: number }>(
         "/api/backup/json",
@@ -97,3 +103,24 @@ export const api = {
       ),
   },
 };
+
+export type Api = typeof serverApi;
+
+// Version hébergée sur claude.ai (build `npm run build:artifact`) : pas de
+// serveur, la logique tourne dans le navigateur et les données sont enregistrées
+// dans la base privée de la page.
+export const IS_ARTIFACT = import.meta.env.VITE_TARGET === "artifact";
+
+function createArtifactApi(): Api {
+  const b = createMemoryBackend(createArtifactPersistence());
+  return {
+    products: b.products,
+    scripts: b.scripts,
+    prospects: b.prospects,
+    logs: b.logs,
+    exportCsv: b.exportCsv,
+    backup: { exportJson: b.exportJson, importJson: b.importJson },
+  };
+}
+
+export const api: Api = IS_ARTIFACT ? createArtifactApi() : serverApi;
