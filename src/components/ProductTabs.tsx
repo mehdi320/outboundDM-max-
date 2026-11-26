@@ -1,3 +1,4 @@
+import { askConfirm } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import type { Product } from "@shared/types";
 import { errorMessage, useToast } from "@/components/Toast";
@@ -28,7 +29,7 @@ export function ProductTabs({ products, activeId, onSelect, onCreate, onDelete }
   }
 
   async function handleDelete(id: number, nom: string) {
-    if (!confirm(`Supprimer le produit "${nom}" et toutes ses données associées ?`)) return;
+    if (!(await askConfirm(`Supprimer le produit "${nom}" et toutes ses données associées ?`))) return;
     try {
       await onDelete(id);
     } catch (err) {

@@ -1,3 +1,4 @@
+import { askConfirm } from "@/components/ConfirmDialog";
 import { useMemo, useState } from "react";
 import type { NewProspect, Platform, Prospect, Statut, UpdateProspect } from "@shared/types";
 import { PLATFORMS, STATUTS, STATUT_LABELS } from "@shared/types";
@@ -75,7 +76,7 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
   }
 
   async function handleDelete(id: number, p: string) {
-    if (!confirm(`Supprimer le prospect "${p}" ?`)) return;
+    if (!(await askConfirm(`Supprimer le prospect "${p}" ?`))) return;
     try {
       await onDelete(id);
     } catch (err) {

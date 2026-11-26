@@ -6,6 +6,22 @@ prépare le message (variables remplies, script assigné en rotation A/B), tu cl
 "Copier", tu vas coller et envoyer toi-même dans Threads/Instagram/Twitter, puis tu cliques
 "Suivant". L'app ne se connecte à aucun compte, aucune API de messagerie, aucun réseau social.
 
+## Trois façons de lancer l'app
+
+1. **Sur claude.ai (sans rien installer)** : la page hébergée tourne dans le navigateur, depuis
+   le PC ou l'iPhone. Les données sont enregistrées dans la base privée de la page (lisible et
+   modifiable par le seul propriétaire). Dans l'app Claude pour ordinateur, le bouton
+   « Installer comme application » en fait une app de bureau avec sa propre fenêtre et son icône.
+   Pour republier après une modification : `npm run build:artifact`, puis publier
+   `dist-artifact/outbounddm-max.html`.
+2. **Double-clic en local** : `Lancer OutboundDM.bat` (Windows) ou `Lancer OutboundDM.command`
+   (Mac). Installe les dépendances au premier lancement, démarre l'app et ouvre le navigateur.
+   Node.js requis (https://nodejs.org).
+3. **Terminal** : `npm install` puis `npm run dev` (voir ci-dessous).
+
+Les deux versions (hébergée et locale) ont des bases séparées : pour passer de l'une à
+l'autre, utilise « Sauvegarde JSON » puis « Restaurer ».
+
 ## Stack
 
 - **Front** : Vite + React + TypeScript + Tailwind CSS

@@ -1,11 +1,28 @@
+import { askConfirm } from "@/components/ConfirmDialog";
 import { useRef, useState } from "react";
 import type { BackupPayload } from "@shared/types";
 import { api } from "@/api/client";
+import { saveFile } from "@/utils/saveFile";
+import { localToday } from "@/utils/date";
 
 export function BackupControls() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleExport() {
+    setError(null);
+    try {
+      const payload = await api.backup.exportJson();
+      await saveFile(
+        `dm-prospection-backup-${localToday()}.json`,
+        JSON.stringify(payload, null, 2),
+        "application/json"
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Échec de la sauvegarde.");
+    }
+  }
 
   async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -26,11 +43,12 @@ export function BackupControls() {
         throw new Error("Ce fichier ne ressemble pas à une sauvegarde valide.");
       }
 
-      const confirmed = confirm(
+      const confirmed = await askConfirm(
         `Restaurer cette sauvegarde va REMPLACER toutes les données actuelles par :\n` +
           `${payload.products.length} produit(s), ${payload.scripts.length} script(s), ` +
           `${payload.prospects.length} prospect(s), ${payload.logs.length} log(s).\n\n` +
-          `Cette action est irréversible. Continuer ?`
+          `Cette action est irréversible. Continuer ?`,
+        "Restaurer"
       );
       if (!confirmed) return;
 
@@ -45,14 +63,13 @@ export function BackupControls() {
 
   return (
     <div className="flex items-center gap-2">
-      <a
-        href={api.backup.exportJsonUrl()}
-        download
+      <button
+        onClick={handleExport}
         className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-amber-400 hover:border-amber-500 transition-colors"
         title="Télécharger une sauvegarde complète (produits, scripts, prospects, logs)"
       >
         ⬇ Sauvegarde JSON
-      </a>
+      </button>
       <button
         className="text-xs px-3 py-1.5 rounded border border-base-600 text-base-300 hover:text-amber-400 hover:border-amber-500 transition-colors disabled:opacity-40"
         onClick={() => fileInputRef.current?.click()}
