@@ -66,14 +66,15 @@ backupRouter.post("/json", (req, res) => {
     }
 
     const insertProspect = db.prepare(
-      `INSERT INTO prospects (id, produit_id, pseudo, plateforme, detail_personnalisation, statut, date_ajout, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO prospects (id, produit_id, pseudo, prenom, plateforme, detail_personnalisation, statut, date_ajout, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
     for (const pr of payload.prospects) {
       insertProspect.run(
         pr.id,
         pr.produit_id,
         pr.pseudo,
+        pr.prenom ?? null,
         pr.plateforme,
         pr.detail_personnalisation,
         pr.statut,

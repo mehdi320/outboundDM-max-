@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { NewProspect, Prospect, UpdateProspect } from "@shared/types";
 import { api } from "@/api/client";
+import { localToday } from "@/utils/date";
 
 export function useProspects(produitId: number | null) {
   const [prospects, setProspects] = useState<Prospect[]>([]);
@@ -55,7 +56,7 @@ export function useProspects(produitId: number | null) {
 
   const contactProspect = useCallback(
     async (id: number, scriptId: number) => {
-      const result = await api.prospects.contact(id, scriptId);
+      const result = await api.prospects.contact(id, scriptId, localToday());
       await refresh();
       return result;
     },

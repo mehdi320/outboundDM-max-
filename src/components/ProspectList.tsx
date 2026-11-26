@@ -30,6 +30,7 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
   const [pseudo, setPseudo] = useState("");
   const [plateforme, setPlateforme] = useState<Platform>("Threads");
   const [detail, setDetail] = useState("");
+  const [prenom, setPrenom] = useState("");
   const [linkDetected, setLinkDetected] = useState(false);
   const { showError } = useToast();
 
@@ -47,10 +48,12 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
       await onCreate({
         produit_id: produitId,
         pseudo: pseudo.trim().replace(/^@/, ""),
+        prenom: prenom.trim() || null,
         plateforme,
         detail_personnalisation: detail.trim() || null,
       });
       setPseudo("");
+      setPrenom("");
       setDetail("");
       setProfileLink("");
       setLinkDetected(false);
@@ -167,6 +170,15 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
             />
           </label>
           <label className="text-xs text-base-400 flex flex-col gap-1">
+            Prénom <span className="text-base-600">(pour {"{prenom}"})</span>
+            <input
+              className="bg-base-900 border border-base-600 rounded px-2 py-1.5 text-sm w-32"
+              value={prenom}
+              onChange={(e) => setPrenom(e.target.value)}
+              placeholder="Jean"
+            />
+          </label>
+          <label className="text-xs text-base-400 flex flex-col gap-1">
             Plateforme
             <select
               className="bg-base-900 border border-base-600 rounded px-2 py-1.5 text-sm"
@@ -224,7 +236,10 @@ export function ProspectList({ produitId, prospects, onCreate, onBulkCreate, onU
             ) : (
               filtered.map((p) => (
                 <tr key={p.id} className="border-b border-base-800 hover:bg-base-900/50">
-                  <td className="px-3 py-2 text-base-100 font-medium">{p.pseudo}</td>
+                  <td className="px-3 py-2 text-base-100 font-medium">
+                    {p.pseudo}
+                    {p.prenom && <span className="text-base-500 font-normal text-xs"> · {p.prenom}</span>}
+                  </td>
                   <td className="px-3 py-2 text-base-300">{p.plateforme}</td>
                   <td className="px-3 py-2 text-base-400 text-xs max-w-[240px] truncate" title={p.detail_personnalisation ?? ""}>
                     {p.detail_personnalisation || <span className="text-base-600">—</span>}

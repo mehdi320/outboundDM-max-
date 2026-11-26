@@ -88,6 +88,11 @@ if (!productColumns.some((c) => c.name === "objectif_dm_jour")) {
   db.exec("ALTER TABLE products ADD COLUMN objectif_dm_jour INTEGER");
 }
 
+const prospectColumns = db.prepare("PRAGMA table_info(prospects)").all() as { name: string }[];
+if (!prospectColumns.some((c) => c.name === "prenom")) {
+  db.exec("ALTER TABLE prospects ADD COLUMN prenom TEXT");
+}
+
 const scriptColumns = db.prepare("PRAGMA table_info(scripts)").all() as { name: string }[];
 if (!scriptColumns.some((c) => c.name === "actif")) {
   db.exec("ALTER TABLE scripts ADD COLUMN actif INTEGER NOT NULL DEFAULT 1");
